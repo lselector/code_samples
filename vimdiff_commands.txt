@@ -1,0 +1,18 @@
+vimdiff commands:
+
+Ctrl W + w - switch to the other split window
+
+]c - jump to the next change
+[c - jump to the previous change
+
+do - diff optain (pull from other window)
+dp - diff put    (put to other window)
+
+zo - open folded text
+zc - close folded text
+zr - unfold all folds
+zm - close all folds
+
+:diffupdate - re-scan files for differences
+:set diffopt+=iwhite - avoid white space comparison
+:set diffopt=filler,context:0 - to show only diffs
