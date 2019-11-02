@@ -1,0 +1,45 @@
+
+
+Here is a simple procedure to parse a line of a CSV file
+
+# --------------------------------------------------------------
+# myCSVsplit
+# my ref_to_fields_arr = myCSVsplit($line)
+#   accepts 1 line from the CSV file (Comma-Separated Value)
+#   returns ref to an array of fields
+#   code borrowed and simplified from CSV.pm module
+# --------------------------------------------------------------
+sub myCSVsplit {
+  my $line = shift;
+  my @fields = ();
+  my $t;
+  chomp $line;
+  return @fields if (length($line) == 0);
+  my $comma;
+
+  while ($line =~ m{          ## start match with comments
+    (?=.)                     ## Lookahead for a "." in $line but do not include it in $1
+    (                         ## capture into $1
+        (?:                   ## do not capture the quotes
+           "((?:""|[^"]+)*)"  ## optional capture of stuff between quotes into $2
+        )?                    ## end of optional grouping
+        ([^,]*)               ## capture into $3
+    )                         ## end of $1
+    (,?)                      ## capture optional comma into $4
+    }sgx) {                   ## options: s - single_line (. matches "\n"), g - global, x - allow comments
+
+    $comma = $4;
+
+    if (defined($2) && !length($3)) {  # field was quoted, need to change "" -> "
+      ($t = $2) =~ s{""}{\"}xmsg;
+      push(@fields, $t);
+    } else {
+      push(@fields, $1);
+    }
+
+  } # end of while()
+
+  push(@fields, "") if $comma;
+  return \@fields;
+
+}

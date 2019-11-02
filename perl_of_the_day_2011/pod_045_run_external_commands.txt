@@ -1,0 +1,98 @@
+Hello,
+
+Today's topic is running external commands from perl.
+There are several ways of doing this:
+  - backtics: `$cmd`  or qx{$cmd}
+  - system($cmd)
+  - exec($cmd) - this never returns back to your code
+  - open(FH, '|$cmd') - pipe from perl into an external $cmd
+  - open(FH, '$cmd|') - pipe from external $cmd back into perl
+
+Below are several simple examples:
+
+============================================
+backticks - work like in shell:
+
+   my $yyyymmdd  = `date +'%Y%m%d'`;
+
+For better visibility you can use qx{} syntax:
+http://perldoc.perl.org/perlop.html#Quote-Like-Operators
+
+   my $yyyymmdd  = qx{date +'%Y%m%d'};
+
+Note - inside the backtics of qx() the string is treated as between double-quotes.
+So this makes sense:
+
+my $file = 'somefile';
+my @lines = qx{cat $file};  # returns array in list context
+
+The backticks operator spawns external shell /bin/sh to execute the command.
+If the command exits with error, the code is set in $? in shell - and passed into $? inside perl.
+So you can do this:
+
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+
+my $output = qx{/bin/false};  # command 'false' always exists with error
+if($?) {
+  my $code = $? >> 8;   # the actual error code is in the upper byte, so we shift
+  print"error code = $code\n";
+} else {
+  print"not set\n";
+}
+
+============================================
+system() 
+http://perldoc.perl.org/functions/system.html
+
+accepts a command (or a command and arguments)
+returns zero on success, some code if problem.
+You can also inspect $? (same as with backticks).
+Note: the output is not returned. You can use qx{} or pipe for that.
+
+system(my command);
+if ($? == -1) {
+  print "failed to execute: $!\n";
+} elsif ($? & 127) {
+  printf "child died with signal %d, %s coredump\n",
+    ($? & 127),  ($? & 128) ? 'with' : 'without';7.
+} else {
+  printf "child exited with value %d\n", $? >> 8;
+}
+
+============================================
+pipe-from-perl-into-command:
+
+  open(OUTPUT, '|sort >foo'); # pipe to sort
+  print OUTPUT stuff_to_sort;
+  close OUTPUT; # wait for sort to finish
+  open(INPUT, 'foo'); # open file to get sorted results
+
+another example:
+
+  open(SENDMAIL, "|/usr/sbin/sendmail -t") or die "Cannot open sendmail: $!";
+  print SENDMAIL "Reply-to: me\@awesome.org\n";
+  print SENDMAIL "Subject: hello\n";
+  print SENDMAIL "To: you\@awesome.org\n";
+  print SENDMAIL "Content-type: text/plain\n\n";
+  print SENDMAIL qq{ text1\ntext2\ntext3\n};
+  close(SENDMAIL);
+
+============================================
+pipe-from-command-into-perl:
+
+  my $cmd = '/bin/cat test.pl';
+  my $pid = open(my $mypipe, $cmd . ' 2>&1 |');
+  if (! $pid) {
+    print "fork failed\n";
+    exit;
+  }
+  print "fork succeeded\n";
+  while (defined(my $readline = <$mypipe>)) {
+    print $readline;
+  }
+  close $mypipe;
+============================================
+

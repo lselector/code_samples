@@ -1,0 +1,46 @@
+Hello,
+
+Today few misc. examples.
+# --------------------------------
+# return value of matching:
+#   depending on whether we use memory braces or not
+#   and on the context, the return value may be 
+#   the number of matches, or one or more matched values.
+# --------------------------------
+$sss0 = " a1 a2 a3 a4 a5 "; 
+$sss = $sss0; 
+$a = ($sss =~ m/a\d/);    print "$a\n";    # 1 
+$a = ($sss =~ m/(a\d)/);  print "$a\n";    # 1 
+@a = ($sss =~ m/a\d/);    print "@a\n";    # 1 
+@a = ($sss =~ m/(a\d)/);  print "@a\n";    # a1 
+@a = ($sss =~ m/(a\d)/g); print "@a\n";    # a1 a2 a3 a4 a5 
+print "-----------------------------------\n"; 
+$sss = $sss0; 
+$a = ($sss =~ s/a\d/p/);  print "$a\n";    # 1 
+$sss = $sss0; 
+$a = ($sss =~ s/a\d/p/g); print "$a\n";    # 5 
+$sss = $sss0; 
+@a = ($sss =~ s/a\d/p/g); print "@a\n";    # 5 
+print "-----------------------------------\n"; 
+$sss = $sss0; 
+$a = ($sss =~ tr/a/b/);   print "$a\n";    # 5 
+$sss = $sss0; 
+@a = ($sss =~ tr/a/b/);   print "@a\n";    # 5 
+print "-----------------------------------\n"; 
+
+# --------------------------------
+# Examples of split: 
+# --------------------------------
+   ($a) = (split /:/)[-1]; 
+   ($a,$b,$c) = split; 
+
+# --------------------------------
+# Examples of map and grep: 
+# --------------------------------
+@arr2 = map { list context } @arr1; 
+@arr2 = map /   /, @arr1; 
+@arr2 = map { /(   )/ } @arr1; 
+
+@arr2 = grep { scalar context } @arr1; 
+$count = grep !$_ , @arr1; 
+

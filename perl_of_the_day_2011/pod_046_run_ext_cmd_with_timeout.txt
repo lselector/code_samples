@@ -1,0 +1,77 @@
+Hello,
+
+Today's topic is running external commands with a timeout.
+See implementation for perl version 5.005_04 here:
+/a/someuser/bin/modules/RunWithTimeout.pm
+
+Here is the main subroutine:
+
+# --------------------------------------------------------------
+# run_cmd($cmd, $params) - returns 1 on success, 0 (zero) on error
+# Example:
+#   if (! run_cmd('ls',{timeout=>2})) { process error here }
+#   $params is a ref to a hash with fields: 
+#     on input : timeout
+#     on output: timeout, runtime, output, err_str
+# Special care is used to assure that all child processes are killed after timeout or fatal error.
+# --------------------------------------------------------------
+sub run_cmd {
+  my $cmd = shift; # cmd line
+  my $ret = shift; # ref to hash
+  my $timeout = $ret->{timeout} || 0;
+  $ret->{output}  = "";
+  $ret->{err_str} = "";
+  my $start_time  = time();
+  say "SYSTEM: " . $cmd;
+  my $time_max = ($timeout) ? $timeout
+                            : 3600*24*15;     # nothing runs 15 days, we reboot every 7 days
+
+  # we set timeout via SIGALARM causing dying inside eval{}
+  # this approach allows to handle hanging system calls, etc.
+
+  eval {
+    local $SIG{ALRM} = sub { die "timeout\n"; };
+    alarm($time_max); # set alarm
+
+    my $pid = open(RUNCMD, $cmd . ' 2>&1 |');
+    if (! $pid) {
+      say("SYSTEM failed: $!");
+      $ret->{err_num} = 0+$!;
+      $ret->{err_str} = "".$!;
+      return undef;
+    }
+
+    # start reading filehandle until it is closed (by itself - or because of timeout)
+    while (defined(my $readline = <RUNCMD>)) {
+      print $readline;
+      $ret->{output} .= $readline;
+    }
+    close(RUNCMD);
+    alarm(0); # turn off alarm
+  };  # end of eval block 
+
+  if($@) {   # timeout or other error
+    say "Error - " . $@;
+    $ret->{err_str} = $@;
+    clean_children();
+  }
+
+  $ret->{runtime} = time()-$start_time; # in seconds
+  return ($ret->{err_str})? 0 : 1;
+
+}
+
+Note: the sub above calls procedure clean_children().
+Explaining how it works goes way beyond the scope of this email.
+See actual code here:
+  /a/someuser/bin/modules/RunWithTimeout.pm
+Here are the highlights:
+
+use POSIX ":sys_wait_h";          # this is for waitpid($pid, WNOHANG)
+$SIG{TERM} = 'IGNORE';            # not to kill myself
+kill(-15,0);                      # sending TERM to group under $$
+$ret = waitpid(-1, WNOHANG);      # remove all my zombies 
+$ret = waitpid($pid, WNOHANG);    # checks the status of process $pid
+kill("KILL", $pid);
+
+

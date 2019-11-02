@@ -1,0 +1,35 @@
+Hello,
+
+Today's email is about processing command line options.
+
+Perl puts command line parameters into array @ARGV
+You can parse it manually, or you can do it using a module like Getopt::Long
+http://perldoc.perl.org/Getopt/Long.html
+
+For example, if I want to parse a command like this:
+
+perl  myscript.pl   -l 24   -m mode   -v    -col c1   --col c2   input_file
+
+I can do this:
+
+use Getopt::Long;
+my ($opt_help, $opt_length, $opt_mode, $opt_verbose, @opt_cols, $fname);
+
+GetOptions (
+  "l|length=i"      => \$opt_length,    # numeric
+  "m|mode=s"        => \$opt_mode,      # get value into a string
+  "v|verbose"       => \$opt_verbose    # flag
+  "c|col=s"         => \@opt_cols,      # get several values into an array
+  "help|h|?"        => \$opt_help,      # flag to show help and exit
+);
+
+# While extracting options from @ARGV, Getopt::Long removes them from the array @ARGV.
+# After all options are extracted, @ARGV will contain only remaining non-option arguments.
+# In our case it is the name of the input file input_file:
+
+$fname = @ARGV[0]; 
+
+if ($opt_help) {
+  show_help();
+  exit;
+}

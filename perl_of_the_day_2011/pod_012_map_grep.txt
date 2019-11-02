@@ -1,0 +1,27 @@
+
+map & grep functions
+
+Explained very well in this old article:
+http://usenix.org/publications/login/1998-6/perl.html
+
+map() transforms, grep() filters.
+
+I usually add ";" right after the openning curly to tell perl 
+that this is a piece of code and not an anonymous hash.
+Like this:
+@result = map {; code } list;
+@result = grep {; code } list 
+
+Note also that there is no comma after closing curly.
+
+For each element of the list
+the element is put into the $_, then the expression
+in curlies is evaluated, the result of last operation 
+in curlies is returned into the result.
+Example:
+  @times_ten = map {; $_ * 10 } 1..10; 
+
+Here is a frequent idiom - populate hash from array:
+
+my %hh;
+%hh = map { $_ => 1 } @arr; 

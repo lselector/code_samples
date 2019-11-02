@@ -1,0 +1,27 @@
+Today's issue is about Perl's classes and objects.
+
+New Perl 6 does have classes and objects as part of the language.
+But Perl 6 is not available yet for production use.
+
+Perl 5 doesn't have classes as part of the language.
+There are modules which implement complete OO framework (see father below),
+but mostly programmers use simple objects implemented as following:
+  - a module's namespace (a package) as a class name
+  - anonymous hash as an object.
+    use bless() function to change the label on this hash
+    (to tell perl that this is an object, and not just a hash)
+  - the constructor is  a function with any name (usually new())
+    which creates an anonymous hash, changes the label using bless() function, 
+    does some initialization of hash elements, and returns reference to this hash.
+
+I highly recommend this tutorial:
+  http://perldoc.perl.org/perltoot.html
+
+The mechanism described above is very simple. 
+It doesn't support privacy, though.
+If you want a framework which supports proper OOP paradigms - google for "inside-out objects".
+You can read this:
+  http://www.stonehenge.com/merlyn/UnixReview/col63.html
+Or search CPAN for Class::Std
+  http://search.cpan.org/~dconway/Class-Std-0.011/lib/Class/Std.pm
+

@@ -1,0 +1,60 @@
+Hello
+
+The diamond operator < ... > is used to read text files as it is breaking file into pieces ending with the value in $/ variable (usually "\n");
+To read binary files we can use read() function to read certain number of bytes into a scalar buffer:
+http://www.perlmonks.org/?node=perlfunc%3Aread
+
+read(fh, buffer, nbytes, offset)
+read(fh, buffer, nbytes)
+
+Here is an example of small script which can read any file (text or binary) - and show its contents in hexadecimal format.
+
+#!/usr/local/bin/perl5
+
+# ---------------------------------------------------------------
+# xdump - hexadecimal viewer
+# It can read from STDIN or from a file
+# Usage: xdump [file]
+# ---------------------------------------------------------------
+
+use strict;
+
+# -----------------------------------------
+# Use the file they specified, if specified 
+# -----------------------------------------
+if ($ARGV[0]) {
+  open(STDIN,$ARGV[0]) or die "Can't open $ARGV[0]: $!\n";
+}
+
+# -----------------------------------------
+# Do it optimall as long as we can read 16 bytes at a time.
+# -----------------------------------------
+my ($len, $data, @array);
+my $offset = 0;
+
+while (($len = read(STDIN,$data,16)) == 16) {
+  @array = unpack('N4', $data);
+  $data =~tr/\0-\37\177-\377/./;
+  printf "%8.08x    %8.08x  %8.08x  %8.08x  %8.08x  %s\n",$offset,@array,$data;
+  $offset += 16;
+}
+
+# -----------------------------------------
+# Now finish up the end a byte at a time.
+# -----------------------------------------
+if ($len) {
+  @array = unpack('C*', $data);
+  $data =~y/\0-\37\177-\377/./;
+  for (@array) {
+    $_ = sprintf('%2.2x', $_);
+  }
+  push(@array, '  ') while $len++ < 16;
+  $data =~ s/[^ -~]/./g;
+  printf "%8.08x    ",$offset;
+  printf "%s%s%s%s  %s%s%s%s  %s%s%s%s  %s%s%s%s  %s\n",@array, $data;
+}
+
+__END__
+
+
+

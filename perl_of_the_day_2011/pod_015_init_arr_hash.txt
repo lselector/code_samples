@@ -1,0 +1,42 @@
+
+# right and wrong ways to initialize an empty array or hash
+
+use strict ;
+
+my %hh1;
+for (keys %hh1){ print"hh1\n"; }
+
+my @ar1;
+for (@ar1) { print"aa1\n"; }
+
+my %hh2 = ();
+for (keys %hh2){ print"hh2\n"; }
+
+my @ar2 = ();
+for (@ar2) { print"aa2\n"; }
+
+my %hh3 = undef;  # wrong - adds one element with key = undef value, will give warning during compilation
+for (keys %hh3){ print"hh3\n"; }
+
+my @ar3 = undef;  # wrong - adds one element with undef value to array
+for (@ar3) { print"aa3\n"; }
+
+print "-----------references\n";
+
+my $hh4;
+for (keys %$hh4){ print"hh4\n"; }
+
+my $ar4;
+for (@$ar4) { print"aa4\n"; }
+
+my $hh5 = {};
+for (keys %$hh5){ print"hh5\n"; }
+
+my $ar5 = [];
+for (@$ar5) { print"aa5\n"; }
+
+my $hh6 = undef;
+for (keys %$hh6){ print"hh6\n"; }
+
+my $ar6 = undef;
+for (@$ar6) { print"aa6\n"; }

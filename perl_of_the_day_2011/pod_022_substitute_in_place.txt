@@ -1,0 +1,22 @@
+Hello,
+
+Below is an example of how to do substitutions in multiple files "in place".
+This was already discussed earlier, but worth repeating.
+We will sue 3 options:
+ -e - execute the perl code provided on cmd line
+ -p - read each line into $_, execute your code, and then print $_
+ -i  - "in place", that is, print into the original file (change the original)
+
+Note: in the command below the order of cmd options "p" and "i" is important.
+  "-pi"  works, but   "-ip"   doesn't work.
+
+perl -pi -e 's{/a/n142420/L2/bin/runCmds.pl}{../bin/runCmds.pl}g;' *.sh
+
+The command above runs a substitute command s{}{}g  on contents of all *.sh files.
+Namely, it looks for a pattern like this:
+
+    /a/n142420/L2/bin/runCmds.pl
+
+and substitutes it to relative path:
+
+    ../bin/runCmds.pl

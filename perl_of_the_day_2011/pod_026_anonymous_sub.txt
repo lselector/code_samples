@@ -1,0 +1,58 @@
+Hello,
+
+In perl you can create anonymous arrays, hashes, and subroutines - and return a reference, for example:
+
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+
+# --------------------------------------
+# array:
+my   $ra = [1,2,3,"mama"];
+print $ra->[1],"\n";    # prints 2
+
+# --------------------------------------
+# hash:
+my   $rh = { kk1 => "vv1", kk2 => "vv2" };
+print $rh->{kk2},"\n";    # prints vv2
+
+# --------------------------------------
+# subroutine
+my $rs = sub { print $_[0],"\n"; };
+$rs->("one");   # prints one
+
+# --------------------------------------
+# now the same - but without middleman
+sub { print $_[0],"\n"; }->("two");
+
+# --------------------------------------
+# now pass anonymous sub into another sub
+sub mysub { $_[0]->($_[1]); }
+mysub ( $rs , "three"  ); # prints three
+
+
+Functions map(), grep(), sort() accept reference to annonymous subroutine as the first argument.
+
+my @arr1 = (4,3,2,1);
+my @arr2 = ();
+print @arr1,$/;
+
+@arr2 = sort { $a <=> $b } @arr1;
+print @arr2,$/;
+
+my $rs = sub { $a <=> $b };
+@arr2 = sort $rs @arr1; # here we explicitly pass reference $rs to the sub
+print @arr2,$/;
+
+Note:
+  people use 2 equivalent forms of map and grep functions, for example for map:
+  @result = map(expression, list); 
+  @result = map { code } list;
+
+Specific examples:
+  @result = map $_ * 10, @arr;
+  @result = map { $_ * 10 } @arr;
+
+Note that in the 2nd form (with the code block in curilies) there is no need to put a comma to separate 2 arguments (code and list).
+

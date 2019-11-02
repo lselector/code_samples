@@ -1,0 +1,80 @@
+# ---------------------------------------------------------------
+# referencing arrays and hashes
+# ---------------------------------------------------------------
+$ss ="I am a scalar"; 
+
+$rs = \$ss;  # reference
+$tt = ref($rs); print "ref. type = $tt\n"; 
+
+### dereferencing   ${reference} 
+$test = ${$rs}; print "$test\n";       # I am a scalar 
+$test = $$rs;   print "$test\n";       # I am a scalar 
+print "--------------------------------\n"; 
+@arr = ('a1', 'a2', 'a3', 'a4', 'a5'); 
+$ra = \@arr; 
+$tt = ref($ra); print "type = $tt\n"; 
+$test = $arr[2];    print "$test\n";   # a3 
+$test = $ra->[2];   print "$test\n";   # a3 
+$test = ${$ra}[2];  print "$test\n";   # a3 
+$test = $$ra[2];    print "$test\n";   # a3 
+
+$test = $#arr;      print "$test\n";   # 4 - last index 
+$test = $#{$ra};    print "$test\n";   # 4 
+$test = $#$ra;      print "$test\n";   # 4 
+print "--------------------------------\n"; 
+%hash = ('k1' => 'v1', 'k2' => 'v2'); 
+$rh = \%hash; 
+$tt = ref($rh); print "type = $tt\n"; 
+$test = $hash{k2};  print "$test\n";   # v2 
+$test = $rh->{k2};  print "$test\n";   # v2 
+$test = ${$rh}{k2}; print "$test\n";   # v2 
+$test = $$rh{k2};   print "$test\n";   # v2 
+# ---------------------------------------------------------------
+$r->[i]->[j] 
+$r->{ki}->{kj} 
+$r->[i]->{kj} 
+$r->{ki}->[j] 
+
+create anonymous array or hash with [ ] or { }:  
+
+$ra = [ 1,2,3,4,5 ];  # create anon. array and return the reference 
+
+@arr = ('a1', 'a2', 'a3', 'a4', 'a5'); 
+$ra1 = \@arr; 
+$ra2 = [ @arr ];  # $ra2 and $ra1 reference different memory locations 
+
+same with hashes 
+
+$rh = {  
+ k1 => 'v1', 
+ k2 => 'v2',  
+ k3 => 'v3',  
+}; 
+# ---------------------------------------------------------------
+print "===== ARRAY:\n"; 
+@arr = ( 
+  [ 1, 2, 3], 
+  [ 4, 5, 6], 
+  [ 7, 8, 9], 
+); 
+$ra = \@arr; 
+#  3rd element of 2nd row (6) : 
+  $test = $arr[1][2];     print $test,"\n";   # 6 
+  $test = $arr[1]->[2];   print $test,"\n";   # 6 
+  $test = $ra->[1][2];    print $test,"\n";   # 6 
+  $test = $ra->[1]->[2];  print $test,"\n";   # 6 
+
+print "===== HASH:\n"; 
+%hash = ( 
+  0 => { 0 => 1, 1 => 2, 2 => 3 }, 
+  1 => { 0 => 4, 1 => 5, 2 => 6 }, 
+  2 => { 0 => 7, 1 => 8, 2 => 9 }, 
+); 
+
+$rh = \%hash; 
+#  3rd element of 2nd row (6) : 
+  $test = $hash{1}{2};    print $test,"\n";   # 6 
+  $test = $hash{1}->{2};  print $test,"\n";   # 6 
+  $test = $rh->{1}{2};    print $test,"\n";   # 6 
+  $test = $rh->{1}->{2};  print $test,"\n";   # 6 
+# ---------------------------------------------------------------

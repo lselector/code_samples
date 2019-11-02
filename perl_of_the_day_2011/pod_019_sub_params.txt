@@ -1,0 +1,53 @@
+
+When you pass arguments to a subroutine, they are 
+accessible from inside the subroutine via array @_.
+Note: 
+Elements of @_ are aliases to external variables.
+Thus if you change elements of this array, you will 
+change values outside the sub.
+Sometimes this is exactly what you want, for example:
+
+sub str_clean {
+  $_[0] =~ s/^\s+|\s+$//msg;
+}
+
+my $str = "  crocodile  \n  \n  ";
+str_clean($str);
+print ">$str<",$/;
+
+Sometimes you want to create "local" variables.
+You can create them either with function my(), or local().
+  my() is used to create a trully lexically scoped variable (not seen from outside).
+  local() is used to temporarily substitute external variable.
+
+Examples:
+   sub func1 {
+     my ($var1,$var2) = @_;
+     # do somthing
+   } 
+   
+   sub func2 {
+     local $/ = undef;
+     # do something
+   }  
+
+Example using shift() function to take values of @_ into my() variables:
+   sub func3 {
+     my $var1 = shift;
+     my $var2 = shift;
+     # do somthing
+   } 
+
+When passing arrays or hashes into a sub, it is a good idea to pass them by reference,
+for example:
+
+sub func4 {
+  my $ref2arr = shift;
+  for my $elem (@$ref2arr) {
+    print "$elem\n";
+  }
+}
+
+my @arr = (1,2,3,4);
+func4(\@arr);
+

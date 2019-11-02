@@ -1,0 +1,16 @@
+Hello,
+
+Today short email - how to becnhmark your programs.
+It is easy with Benchmark module:
+http://perldoc.perl.org/Benchmark.html
+
+Here is a small example:
+
+use Benchmark qw(:all);
+timethis ($count, "code");
+
+# ... or use subroutine references
+timethese($count, {
+  'Name1' => sub { ...code1... },
+  'Name2' => sub { ...code2... },
+});

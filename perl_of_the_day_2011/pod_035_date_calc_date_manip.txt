@@ -1,0 +1,82 @@
+Hello,
+
+Today more about handling dates.
+
+built-in function time() - returns time in seconds since 1970 (epoch time).
+   http://perldoc.perl.org/functions/time.html
+
+built-in function localtime()
+  http://perldoc.perl.org/functions/localtime.html
+It takes epoch time - and converts it in an array of values for your local time settings.
+Or, in scalar context, it returns a string with today's date and time - similar to unix's date command.
+
+Similar function is gmtime()
+   http://perldoc.perl.org/functions/gmtime.html
+It takes epoch time - and converts it in an array of values for Greenwich time zone
+Or, in scalar context, it returns a string with today's date and time - similar to unix's date command.
+
+perl -e 'print gmtime() . $/;'      
+Thu Dec  1 20:44:45 2011
+perl -e 'print localtime() . $/;'        
+Thu Dec  1 15:44:54 2011
+
+There are many modules on CPAN for handling date manipulations.
+My favorite one is Date::Calc
+  http://search.cpan.org/~stbey/Date-Calc-6.3/lib/Date/Calc.pod
+It is light and powerful
+
+Other good module (very flexible and powerful, although quite big) is Date::manip
+  http://search.cpan.org/~sbeck/Date-Manip-6.20/lib/Date/Manip.pod
+
+You may also want to look at the standard module Time::Local
+   http://perldoc.perl.org/Time/Local.html
+This module provides functions that are the inverse of built-in perl functions localtime() and gmtime().
+
+use Time::Local;
+my $str1 = '2010-12-09T06:27:33';
+my ($year,$mon,$mday,$hour,$min,$sec) = split(/\D/,$str1);
+print $str1,$/;
+my $str2 = localtime(timegm($sec,$min,$hour,$mday,$mon-1,$year));
+print $str2,$/;
+
+Yet another thing – strftime() function in POSIX module:
+   http://perldoc.perl.org/POSIX.html
+It convert date and time information to string. Used something like this:
+     $str = POSIX::strftime( "%A, %B %d, %Y", 0, 0, 0, 12, 11, 95, 2 );    
+    print "$str\n";
+
+Here are simple examples of using localtime from one of my earlier emails.
+I decided to reproduce them again because I do similar things often:
+
+# --------------------------------------------------------------
+# datetime4fname() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a file name YYMMDD_HHMMSS, ex. 050512_150645
+# --------------------------------------------------------------
+sub datetime4fname {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) = localtime($mytime);
+  return sprintf("%02d%02d%02d_%02d%02d%02d",$year-100,$mon+1,$mday, $hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime4log() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a log string, ex. 05/09/15_15:06:45
+# --------------------------------------------------------------
+sub datetime4log {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) = localtime($mytime);
+  return sprintf("%02d/%02d/%02d_%02d:%02d:%02d",$mon+1,$mday,$year-100, $hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime_wday4text() - accepts (optionally) time in seconds since 1970
+#   returns date, day_of_week, and time in easy-readable format: 12/31/05 - Mon - 23:59
+# --------------------------------------------------------------
+sub datetime_wday4text {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) = localtime($mytime);
+       my @wday = qw(Sun Mon Tue Wed Thu Fri Sat);
+       my $wd = $wday[$wday];
+  return sprintf("%02d/%02d/%02d - %s - %02dh:%02dm",$mon+1,$mday,$year-100,$wd, $hour,$min);
+}
+

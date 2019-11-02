@@ -1,0 +1,97 @@
+Hello,
+
+Today's topic - accessing databases from perl.
+And specifically - Sybase and MS SQL Server - because this is something used in our code.
+
+DBI.pm - DataBase Interface - generic high-level routines
+  http://search.cpan.org/~timb/DBI-1.616/DBI.pm
+
+There is an excellent book explaining it:
+  http://oreilly.com/catalog/perldbi/chapter/ch04.html
+
+Here is a typical example of usage (in this example we have Oracle, but the syntax is (almost) the same for all databases):
+========================
+use DBI;
+my $dbh = DBI->connect('DBI:Oracle:payroll')
+  or die "Couldn't connect to database: " . DBI->errstr;
+my $sth = $dbh->prepare('SELECT * FROM people WHERE lastname = ?')
+  or die "Couldn't prepare statement: " . $dbh->errstr;
+
+print "Enter name> ";
+while ($lastname = <>) {               # Read input from the user
+  my @data;
+  chomp $lastname;
+  $sth->execute($lastname)             # Execute the query
+    or die "Couldn't execute statement: " . $sth->errstr;
+
+  # Read the matching records and print them out          
+  while (@data = $sth->fetchrow_array()) {
+    my $firstname = $data[1];
+    my $id = $data[2];
+    print "\t$id: $firstname $lastname\n";
+  }
+
+  if ($sth->rows == 0) {
+    print "No names matched `$lastname'.\n\n";
+  }
+
+  $sth->finish;
+  print "\n";
+  print "Enter name> ";
+}
+$dbh->disconnect;
+========================
+
+To work with a specific database, a specific Database Driver (DBD) module should be installed,
+for example:
+
+DBD::Sybase.pm
+  http://search.cpan.org/~mewp/DBD-Sybase-1.14/Sybase.pm
+DBD::Oracle.pm
+  http://search.cpan.org/dist/DBD-Oracle/
+DBD::mysql 
+  http://search.cpan.org/~capttofu/DBD-mysql-4.020/lib/DBD/mysql.pm
+DBD::ODBC 
+  http://search.cpan.org/~jurl/DBD-ODBC-1.13/ODBC.pm
+
+etc.
+etc.
+
+When you connect to a specific server, perl determines the kind of database from connection string - and loads corresponding DBD module.
+
+Our code is mostly old, written well before DBI module was created.
+Technologies used in our code:
+
+(1) BSIO.pm module, which is a wrapper around BearStearns InputOutput C-library (BSIO) used by C/C++ applications.  This library is build using libsybdb (library provided by Sybase) 
+    (actually using Free TDS: -lFreeTDS_sybdb -lFreeTDS_ct)
+
+(2) There are also scripts using sybperl directly. Namely Sybase::DBlib.
+  Sybperl is the generic name for the Sybase Open Client extensions to Perl.
+  Sybase::DBlib - library available before mid-1990s,
+  Sybase::CTlib - newer library available since ~1996 
+  Michael Peppler on his site explains the advantages of using Sybase::CTlib
+  http://www.peppler.org/sybperl/article.html
+
+  You can see documentaion on Michael Peppler's site or on CPAN  
+  http://search.cpan.org/~mewp/sybperl-2.19/pod/sybperl.pod
+
+   use Sybase::DBlib;     # Sybase DB-Library API
+     http://search.cpan.org/~mewp/sybperl-2.19/DBlib/DBlib.pm
+   use Sybase::CTlib;     # Sybase CT-Library (aka the Client Library) API
+     http://search.cpan.org/~mewp/sybperl-2.19/CTlib/CTlib.pm
+   use Sybase::Sybperl;   # Sybase::Sybperl is a backwards compatibility module (implemented on top of Sybase::DBlib)
+     to enable scripts written for sybperl 1.0xx to run with Perl 5.
+     http://search.cpan.org/~mewp/sybperl-2.19/Sybperl/Sybperl.pm
+
+Here is a typical example of code using Sybase::DBlib :
+
+    use Sybase::DBlib;
+
+    $dbh = Sybase::DBlib->new('user', 'pwd', 'server');
+    $dbh->dbcmd("select * from master..sysprocesses");
+    $dbh->dbsqlexec;
+    while($dbh->dbresults != NO_MORE_RESULTS) {
+        while(@data = $dbh->dbnextrow) {
+            print "@data\n";
+        }
+    }

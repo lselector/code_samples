@@ -1,0 +1,67 @@
+Hello,
+
+Regular expressions - a language to specify patterns in text.
+Can be used to search and substitute.
+
+  Example using m//   match construct:
+    if ($txt =~ m/crocodile/i) {
+      print "text contains word 'crocodile'\n";
+    }
+
+  Example: here is how I trim lines using s/from/to/  substitute construct:
+     $line =~ s/^\s+|\s+$//msg;
+
+Perl regular expressions allow some advanced processing, like 
+lookahead (finding pattern1 only if it is followed (or not followed) by pattern2),
+lookbehind (extracting multiple matches into variables $1, $2, etc.),
+and so on.
+
+There are many documentation websites - google for "perlre" or "perlreref"
+
+   http://perl101.org/regexes.html - simple examples
+   http://perldoc.perl.org/perlreref.html  - short reference
+   http://perldoc.perl.org/perlre.html  - complete doc
+   http://perldoc.perl.org/perlfaq6.html  - some FAQs
+
+I recommend you to at least read the 101 tutorial (first link above).
+
+There is a classic book "Mastering Regular Expressions"  by Jeffrey E.F. Friedl
+It explains how regex engine works inside.
+It actually builds a tree, trying different paths, backtracking, trying other paths.
+Depending on your pattern, the matching procedure can take forever.
+Here is a simple demo how this could happen:
+   http://www.regular-expressions.info/catastrophic.html
+So you better keep your regex simple.
+
+Some notes:
+(1)
+  In most old books you see slashes "/" used as delimiters for regular expressions,
+  for example:
+    $txt =~ s/cat/dog/msg;
+  But for text containing paths and URLs, it is more convenient
+  to use some other delimiters, for example { } :
+    $txt =~ s{/my/original/path}{/my/another/path}msg;
+
+(2)
+  By default perl will search through multi-line text.
+  Question: will . match "\n" ? 
+  Answer:  No, but you can make it match using "s" option:
+    s  (single line) - . matches \n
+
+  Question: will ^ and $ match begining and end of lines inside multi-line text?
+  Answer: No, but you can make them match using "m" option:
+    m  (multiline)   - ^ and $ match internal lines inside multi-line text
+
+In most cases when working with multiline text you want both options.
+
+(3)
+  other commonly used options:
+    i - case-insensitive matching
+    g - global (don't stop after matching, continue searching)
+    x - allows to split regex into several lines and add comments for clarity
+
+(4)
+  unix command "grep" on linux has option "-P" to use perlre syntax!
+    grep -P '\bopen\b'
+      here \b means 'word boundary'
+

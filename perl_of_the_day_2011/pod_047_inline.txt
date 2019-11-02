@@ -1,0 +1,30 @@
+Hello,
+
+Perl allows to include other languages right inside perl code using module Inline.pm
+for example, you can include C/C++ or java code.
+http://search.cpan.org/~ingy/Inline/Inline.pod
+
+Perl compiles inlined code on first run.
+Next time perl invoked - it will not need to recompile the library (unless inlined code has changed).
+Here is a simple example of usage:
+
+use Inline C;
+
+print "9 + 16 = ", add(9, 16), "\n";
+print "9 - 16 = ", subtract(9, 16), "\n";
+
+__END__
+__C__
+int add(int x, int y) {
+  return x + y;
+}
+
+int subtract(int x, int y) {
+  return x - y;
+}
+
+
+The older ways of wrapping C-code into perl are XS and SWIG
+http://perldoc.perl.org/perlxs.html
+http://www.swig.org/papers/Perl98/swigperl.htm
+

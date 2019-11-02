@@ -1,0 +1,37 @@
+Hello,
+
+Today's topic - JSON. JSON is a very good way to "stringify" data.
+Much shorter and clearer than XML.
+
+JSON = JavaScript Object Notation - a better (than exml) way to encode data
+  http://en.wikipedia.org/wiki/JSON
+
+Perl has excellent JSON encode/decoder - JSON.pm
+which has simple functions to encode to/from json:
+
+use JSON;
+$json_text = to_json($perl_scalar)
+$perl_scalar = from_json($json_text)
+
+The functions accept many options.
+See documentation here:
+  http://search.cpan.org/~makamaka/JSON-2.53/lib/JSON.pm
+
+
+For example, to save space and make json records shorter:
+
+my $mysession_json = to_json($mysession, {space_after => 1});
+
+Here is how you can make a generic function:
+
+# ---------------------------------------------------------------
+# my_to_json($str_or_obj)
+# ---------------------------------------------------------------
+sub my_to_json {
+  my $str_or_obj = shift;
+  if (ref $str_or_obj) {
+    $str_or_obj = to_json($str_or_obj, {space_after => 1});
+  }
+  return $str_or_obj;
+}
+
