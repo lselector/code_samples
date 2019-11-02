@@ -1,0 +1,63 @@
+
+This project was not finished.
+Some building blockes can be reused in future
+
+technologies:
+   Linux on AWS/EC2
+   redis - used as a queue
+   bash wrapper scripts
+   anaconda python3 scripts for all logic.
+
+First steps
+  install anaconda3
+  install redis
+  redis_restart.bash
+  redis_clean.bash
+  redis_stop.bash
+  DONE redis_dump.bash
+  DONE redis_save.bash
+  script to restore redis from dump
+  ----------------------
+  DONE save_output.bash - save output and logs to separate named directory
+  DONE kill_w.bash
+  DONE kill_m.bash
+  STARTED myrun2.bash (add starting/cleaning redis, add argument --steps)
+  STARTED s2_run_search.py
+  STARTED s3_get_urls_of_listings.py --worker=3
+  STARTED s4_parse_listings.py       --worker=2
+  STARTED s5_make_report.py
+  stat2.bash - report stats of redis queues and output files
+  ----------------------
+
+myrun2.bash should have arument --steps
+    no arguments - run all steps
+    --steps=all - runs all steps
+    --steps=1-  - runs all steps
+    --steps=2 - runs just step 2
+    --steps=2-  - run steps 2 to end
+    --steps=3,4 - run steps 3 & 4
+
+  step2 - fill multi-queue
+      run one script to run search query - and
+      fill a queue 'multi' with URLs like this:
+        ...
+
+  step3 - parse multi-pages to get URLs of single-pages
+       start 40 worker scripts to query multi-listing pages
+       take URLs from 'multi' queue into 'working' set-queue with 'attempt' value 1
+       query query URL - save HTML file
+       parse HTML - extract URLs to listings
+       save listing URLs in queue 'listing_url'
+       if everything is good - move multi-url from 'working' into 'done' queue
+       if not good increase 'attempt' value by one
+       if attempt value > 10 - move url into 'failed'
+       finish when all multi-listing are done or failed
+
+  step4 - similar to step3, but we parsing single-listing pages - and saving data into CSV files.
+       start 40 worker-scripts to query/parse individual listings from 'listing_url' queue
+        -- // --
+       save parsing results into csv file (each worker has its own file it appends to)
+
+  step5 - combine all outputs, email report
+       concat all output CSV files, sort, filter, make once CSV and Excel, email them.
+
