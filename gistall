@@ -2,7 +2,7 @@
 
 """
 # gistall.py
-# checks status of all repos under ~/dw_fload
+# checks status of all repos under ~/my_root_dir
 # It effectively runs "gist" command in all repos directories.
 # To use it, create a symbolic link like this:
 #    cd ~/bin
@@ -70,7 +70,7 @@ def process_cmd_args(bag):
     """
     # process cmd line arguments
     """
-    descr_str = """Script to check status of all repos under ~/dw_fload
+    descr_str = """Script to check status of all repos under ~/my_root_dir
         by running git fetch, diff, and status in subdirectories"""
     parser = argparse.ArgumentParser(description=descr_str)
     parser.add_argument('--verbose', '-verbose', '-v', 
@@ -115,9 +115,9 @@ def myexit(bag):
     sys.exit(bag.error_flag)
 
 # ---------------------------------------------------------------
-def chdir_dw_fload(bag):
+def chdir_my_root_dir(bag):
     """
-    # cd into dw_fload directory
+    # cd into my_root_dir directory
     """    
     if not os.path.isdir(bag.root_dir):
         print("ERROR, directory '%s' doesn't exist, Exiting ..." % bag.root_dir)
@@ -142,9 +142,9 @@ def main(bag):
     process_cmd_args(bag)
     bag.init_dir = os.getcwd() # initial directory
     bag.home = os.path.expanduser("~")
-    bag.root_dir = bag.home + "/" + "dw_fload"
+    bag.root_dir = bag.home + "/" + "my_root_dir"
     set_bag_repo_dirs(bag)
-    chdir_dw_fload(bag)
+    chdir_my_root_dir(bag)
     bag.cmd_template = make_cmd_template(bag)
     for repo_dir in bag.repo_dirs:
         if not os.path.isdir(repo_dir):
