@@ -1,0 +1,72 @@
+# ---------------------------------------------------------------
+# Crontab Scheduling:
+#   each scheduled instance is simply 1 line with 6 fields
+#   separated by one or more spaces:
+#
+#      *       *      *      *      *       cmd1, cmd2, cmd3
+#   Minutes  Hours  Days  Months  Weekdays  Commands
+#
+# Note:
+#   leading and trailing spaces of all lines are ignored
+#   empty lines are ignored
+#   lines starting with # or with spaces followed by # are comments
+#   spaces between fields may be one or several spaces
+#   you can provide one or several comma-separated values in every field
+#   (so you can run several command at several time/dates, and run more than one command)
+#
+# Specific fields:
+#   Minutes - Minutes after the hour (0-59).
+#   Hours - 24-hour format (0-23).
+#   Days - Day of the month (1-31).
+#   Months - Month of the year (1-12).
+#   Weekdays - Day of the week. (0-6; the 0 refers to Sunday).
+#   Command - runs in /bin/sh with very primitive ENV settings.
+#             it is better to set up environment like this:
+#             bash -c 'cd somedir; source env.sh; run_command'
+#
+# Examples:
+#   0 0 * * *   - midnight every day
+#   0 13 * * 1-5  - 1 pm every working day
+#   0 3 1,15 * *  - run at 3 am on 1st and 15th of every month
+#   */20 * * * * - run every 20 min
+#   0,20,40 * * * * - run every 20 min
+#
+#   * * * * * date>/tmp/lev1, date>/tmp/lev2  - run two commands on 1 line (every minute)
+#   * * * * * bash -c 'env  > /tmp/lev_crontab_test_env.txt'   - to show environment (every minute)
+#
+# to load crontab from file:    crontab somefile
+# to write crontab into a file: crontab -l > somefile
+#
+# Note: if something goes wrong, output may be emailed to local account,
+#       also look in /var/log/syslog
+#       or redirect like this: 2>&1 | /usr/bin/logger -t MY_TAG
+#       or redirect like this: >> /path/to/my/log  2>&1
+# ---------------------------------------------------------------
+# tests (uncomment if needed)
+# * * * * * bash -c 'export FN=/tmp/lev_crontab_test.txt;date>>$FN;cd ~/; source .bashrc_crontab; env>>$FN 2>&1 ;echo "==================================">>$FN'
+# * * * * * bash -c 'env     >> /tmp/lev_crontab_test_env.txt'
+# * * * * * bash -c 'who -b  >> /tmp/lev_crontab_test_who.txt'
+# ---------------------------------------------------------------
+# Azure cloud uses UTC time which is 5 hrs ahead of ETC
+# (4 hrs ahead during Summer Savings time)
+# ---------------------------------------------------------------
+# typical script invocation
+17 11 * * * bash -c 'cd ~/; source .bashrc_crontab_prod; cd /data/apps/app1; bash run_app1.sh >> /data/log_prod/app1_${CRONDT}_cron.log 2>&1 ' >> /data/log_prod/app1_cron.log 2>&1
+# ---------------------------------------------------------------
+# run internet speed test every 10 min
+*/10 * * * * bash -c 'cd ~/; source .bashrc; cd ~/internet_speed_test; python speedtest_log.py >> speedtest.err 2>&1'
+#----------------------------------------------------------------
+# remove old files (examples)
+13 1 * * * /usr/bin/find /data/log/ -mtime +7 -type f -delete
+14 1 * * * /usr/bin/find /data/tmp_gunicorn_prod/ -name "pre_*.csv" -mtime +2 -type f -delete
+12 1 * * * /usr/bin/find /data/tmp_gunicorn_test/ -name "pre_*.csv" -mtime +2 -type f -delete
+#----------------------------------------------------------------
+# shorten gunicorn log files
+17 1 * * * /bin/bash -c 'cd ~/; source .bashrc_crontab_test; cd /data/apps/webapp_test; bash cut_log_test.bash >> /data/log_test/cut_log_test_${CRONDT}cron.log 2>&1' >> /data/log_test/cut_log_test_cron.log 2>&1
+18 1 * * * /bin/bash -c 'cd ~/; source .bashrc_crontab_prod; cd /data/apps/webapp_prod; bash cut_log_prod.bash >> /data/log_prod/cut_log_prod_${CRONDT}cron.log 2>&1' >> /data/log_prod/cut_log_prod_cron.log 2>&1
+# ---------------------------------------------------------------
+# save crontab every hour for regular backup
+0 * * * * crontab -l > /data/apps/misc/crontab.txt
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
+# ---------------------------------------------------------------
