@@ -1,0 +1,76 @@
+Hello,
+
+Today's topic - reading and writing to excel files.
+http://search.cpan.org/dist/Spreadsheet-ParseExcel/
+http://search.cpan.org/dist/Spreadsheet-WriteExcel/
+
+http://search.cpan.org/~jmcnamara/Spreadsheet-ParseExcel-0.59/lib/Spreadsheet/ParseExcel.pm
+http://search.cpan.org/~jmcnamara/Spreadsheet-WriteExcel-2.37/lib/Spreadsheet/WriteExcel.pm
+
+use Spreadsheet::ParseExcel; # write Excel file
+use Spreadsheet::WriteExcel; # write to Excel file
+
+Below I am including a couple of examples extracted and simplified from:
+   /a/someuser/bin/jobdocs.pl
+Note - these examples don't work - they are for illustration purpose only to show how the code may look.
+
+sub read_xls2003_file {
+  my $parser = new Spreadsheet::ParseExcel;
+  my $workbook = $parser->Parse($myfile) or die "Can't parse file $myfile";
+  my $worksheet = $workbook->{Worksheet}[0];
+  my $max_row_index = $worksheet->RowRange();
+  my $max_col_index = $worksheet->ColRange();
+  for my $row (0..$max_row_index) {
+    for my $col ( 0..$max_col_index ) {
+      my $cell = $worksheet->{Cells}[$row][$col];
+      my $val = $cell->Value();
+      ...
+    }
+  }
+}
+
+
+sub write_to_excel {
+  my $fname_excel = $myfile;
+  my $fname_tmp = "$fname_excel.$$";
+  say "creating excel file $fname_excel";
+  my $workbook  = Spreadsheet::WriteExcel->new($fname_tmp);
+  my $format = {};
+  $format->{header} = $workbook->add_format();
+  $format->{header}->set_bold();
+  $format->{header}->set_align("top");
+  $format->{header}->set_border(1);
+  $format->{header}->set_color("brown");
+  $format->{header}->set_bg_color("yellow");
+
+  $format->{data} = $workbook->add_format();
+  $format->{data}->set_text_wrap();
+  $format->{data}->set_align("top");
+    
+  $worksheet = $workbook->addworksheet("some name");
+  # add headers
+  my $col = 0;
+  my $row = 0;
+  for my $header (@myheaders) {
+    my $width = $headers_widths{$header} || 20;
+    $width = ($width <= 10)? 15 : int($width*1.2); # increase a bit
+    $worksheet->set_column($col,$col, $width);
+    $worksheet->write(0,$col, $header, $format->{header});
+    $col++;
+  }
+  
+  # add rows
+  for my $job (sort keys %$jobs) {
+    $row ++;
+    for $col (0..@standard_fields-2) {
+      my $content = $jobdocs_fields[$col][1];
+      if ($content =~ m/\n/) { 
+        my @lines = grep {; $_ !~ /^###/ && $_ !~ /^\s*#\s*\-\-\-/ && $_ !~ /^#\s*OWNER/;} split(/\n/,$content);
+        $content = join("\n",@lines);
+      }
+      $worksheet->write($row, $col, $content, $format->{data});
+    }
+  }
+  $workbook->close();
+}
+

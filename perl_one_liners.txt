@@ -1,0 +1,86 @@
+Perl - about cmd options and one-liners.
+
+Perl has many command-line options:
+   http://affy.blogspot.com/p5be/ch17.htm
+   http://www.perl.com/pub/2004/08/09/commandline.html
+   http://www.thegeekstuff.com/2010/06/perl-command-line-options/
+
+Some of them I use very often:
+
+================================
+This is how I always test my scripts:
+
+  perl  -wc  myscript.pl
+
+    where:
+       -w - turn on warnings
+       -c - compile only, don't run
+================================
+One-liners (similar to using awk) can be created with "-e" option: 
+
+  perl -e 'print "Hello World\n"'
+  perl -e 'print "$_\n" for @INC' 
+
+    where
+       -e - eval the string of code
+================================
+  You can change the file "in place"
+  # dos-2-unix as a one-liner
+  perl -pi -e 's/\r\n/\n/' myfile.txt       
+  perl -pi -e 's/word/another/g' *
+
+    where
+      -i - in-place
+      -p - read each line into $_, execute your code, and then print $_
+
+           you can think of -p option like this:
+             while(<>) {
+                  your code
+                  print;
+             }
+
+================================
+  Note:
+      -n is the same as -p, but it doesn't print the $_ at the end
+      -l  (line processing) - without arguments will simply add new line.
+================================
+Perl in many cases can be used instead of awk in a pipe-sequence, for example:
+
+  echo $PATH | perl -e '$_=<>;s/:/\n/g;print;' 
+  find ./ ... | xargs grep open | perl -nle '$ss = $_; @aa=split(/\/\//,$ss); print $aa[0];' | grep open 
+
+  # rename many files simultaneously (here it renames *.tar into *.tar7): 
+  ls -1 *.tar | perl -nle '$old=$_;s/(\.+)tar/$1tar7/;rename($old, $_);' - 
+
+Note in the above examples that with "-n" or "-p" option each line is automatically placed into $_ for you.
+But without these options you have to manually read the line using diamond operator <>
+
+================================
+Note - the code in one-liner should immediately follow the -e option:
+This works:
+  cat 1.txt | perl -n -e 'print $_,$/;'
+
+but this gives an error:
+  cat 1.txt | perl -e -n 'print $_,$/;' 
+
+================================
+Note - the order of options can matter
+This works:
+  perl -pi -e 's/\r\n/\n/' myfile.txt
+
+but this doesn't do anything:
+  perl -ip -e 's/\r\n/\n/' myfile.txt
+
+================================
+On MS Windows you will have to use double-quotes around a one-liner code.
+If you need to use doble-quotes inside the code - you will have to escape them.
+
+On Unix you can use single quotes. This allows to use double-quotes inside the code.
+
+For printing new-line you can use $/ instead of "\n"
+
+perl -e 'print "Hello World\n"'
+
+grep something somefiles* | perl -n -e 'print $_,$/;'
+
+================================

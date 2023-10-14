@@ -1,0 +1,55 @@
+Hello,
+
+This is the last "perl of the day" email.
+In January I will start "python of the day".
+
+The topic of this email - a simple way to create config files in perl syntax.
+Benefits:
+  - you can check syntax of the config file using perl itself.
+  - you can parse config file using perl itself
+  - infinitely flexible format
+
+Here is how I do it.
+
+First, I create a text file (usually with extension ".cfg").
+This config file will have some perl code defining a subroutine which returns a reference to a hash structure.
+
+sub get_myconfig {
+  my $myconfig = {
+    param1 => ...,
+    param2 => ...,
+    ...
+  };
+  return $myconfig;
+}
+1;
+
+Then from the main program I load the config file as following:
+
+require $cfg_file;
+my $myconfig = get_myconfig();
+
+my $var1 = $myconfig->{param1};
+# etc.
+
+Note - there are many other formats of config files you can use.
+For example, you can use config files in XML or JSON format.
+Or use format similar to Apache server config file, etc.
+There are perl modules to read many existing 3rd party config files
+(like, for example nagios plugin .ini style config files, mysql config files, etc.)
+There are modules supporting multiple files, config files including other config files,
+object-oriented config files, etc. etc.
+Just search CPAN forword "config" - and see many pages listing multiple modules.
+
+Config::JSON
+Config::ApacheFormat
+Config::Context::XMLSimple
+Config::Any::XML 
+Log::Log4perl - Log4j implementation for Perl
+Log::Log4perl::Config::DOMConfigurator - reads XML config files
+etc.
+etc.
+etc.
+
+
+

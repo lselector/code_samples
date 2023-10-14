@@ -1,0 +1,62 @@
+Hello,
+
+To write into binary:
+  open()
+  binmode()
+  print()
+  close()
+
+Here is a good summary articles showing handling text and binary files for reading and writing.
+  http://www.perlfect.com/articles/perlfile.shtml
+  http://oreilly.com/catalog/cookbook/chapter/ch08.html
+  http://www.devx.com/DevX/Tip/17116
+  
+And here is a short script demonstrating how to make a binary copy of a file:
+
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+$| = 1;
+
+my $srcfile = "1.txt";
+my $dstfile = "2.txt";
+unlink $dstfile if (-e $dstfile);
+copy_file($srcfile, $dstfile);
+exit;
+
+# ---------------------------------------------------------------
+# copy_file($srcfile, $dstfile)
+# ---------------------------------------------------------------
+sub copy_file {
+  my ($srcfile, $dstfile) = @_;
+  my $buffer;
+  my $bufsize = 65536;
+
+  open (my $infh, $srcfile) or die "\nCan't open $srcfile for reading: $!\n";
+  open (my $outfh, ">", $dstfile) or die "\nCan not open $dstfile for writing: $!\n";
+
+  binmode($infh);
+  binmode($outfh);
+
+  my $nbytes = 0;
+  while () {
+    $nbytes = read($infh, $buffer, $bufsize);
+    last if (!defined $nbytes || $nbytes == 0);
+    print {$outfh} $buffer;
+  };
+
+  die "Problem copying: $!\n" if not defined $nbytes;
+
+  close($outfh) or die "Can't close $dstfile: $!\n";
+  close($infh)  or die "Can't close $srcfile: $!\n";
+}
+
+Note
+  There is also another way - using write() function. 
+  It is NOT oposite of read. 
+  write() uses formatted output - something that is used 
+  very rarely in my experience. 
+  Basically you can define a format and associate it with file handler. 
+  Then write() function will write a formattedrecord into the file using this format.
+

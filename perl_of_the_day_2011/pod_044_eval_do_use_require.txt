@@ -1,0 +1,72 @@
+Hello,
+
+Perl is a dynamic language. This means that it allows to 
+dynamically execute a string containing perl code.
+The program effectively can rewrite itself at run time.
+This is done with the function eval().
+http://perldoc.perl.org/functions/eval.html
+
+There are 2 forms of eval:
+   eval $str;     # perl compiler is invoked at run time to parse $str - and then execute it
+   eval {$str};   # contents of the block is parsed only once when the surrounding code is parsed
+
+If there is a syntax error or runtime error, or a die statement is executed inside eval,
+eval returns undef in scalar context or an empty list or a list containing a single undefined value
+and $@ is set to the error message.
+
+The block form of eval() is usually used to catch run-time errors similar to try/catch in Java
+http://www.perlmonks.org/?node_id=384038
+
+eval {
+  # some code;
+}
+if ($@) {
+  # process error;
+}
+
+Note: in both scalar and block forms, eval returns the value of the last expression evaluated
+inside the evaluated mini-program; a return statement may be also used, just as with subroutines.
+
+Note: it is possible to have nested eval. 
+If you use die without argument - then the error messages get appended together.
+Try this:
+eval {
+  eval {
+    eval {
+      print"Hello\n";
+      die "First die";
+    }
+    if($@) { # 1st catch
+      # do some processing; 
+      die;
+    }
+  }
+  if($@) { # 2nd catch
+    # do some processing;
+    die;
+  }
+}
+if($@) { # 3rd catch
+  # do some processing;
+  die;
+}
+
+Here is the output:
+Hello
+First die at ./test.pl line 10.
+        ...propagated at ./test.pl line 14.
+        ...propagated at ./test.pl line 19.
+        ...propagated at ./test.pl line 24.
+
+
+If you need to include code from a file - this may be done by functions do(), require, or use().
+
+http://perldoc.perl.org/functions/do.html
+http://perldoc.perl.org/functions/require.html
+http://perldoc.perl.org/functions/use.html
+
+do($file_name) is the simplest - it just loads (reads) the file - and eval-s its contents.
+require($file_name) keeps track of loaded files to avoid loading the same code more than once.
+use(Module_name) loads perl modules (with extension .pm) at compile time
+  (as opposed to eval, do, require, whichall work at run time).
+

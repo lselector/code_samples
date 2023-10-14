@@ -1,0 +1,44 @@
+Folks,
+
+Several easy ways to read the whole text file
+
+my $file = "/some/file";
+
+# --------------------------------------
+# typical way:
+# --------------------------------------
+open(my $fh,"<",$file) or die "Can't open file $file for reading: $!";
+while (my $line = <$fh>) {
+  chomp $line;
+  next if $line =~ m/^\s*\#/;  # remove comments
+  $line =~ s/^\s+|\s+$//g;     # trim
+  next if $line eq "";         # remove empty lines
+  push @lines, $line;          # store in an array or process
+}
+close($fh);
+
+# --------------------------------------
+# simple lazy way:
+# --------------------------------------
+open(my $fh,"<",$file) or die "Can't open file $file for reading: $!";
+my @lines = <$fh>; # slurp all lines at once
+close($fh);
+
+# --------------------------------------
+# read file in 1 line - very lazy way
+# --------------------------------------
+my $txt = qx{cat $file};
+# or
+my @lines = qx{cat $file};
+chomp @lines;
+
+The diamond operator reads piece of file until it finds value stored in $/ (by default it is a new-line symbol).
+If we set $/ = undef, then diamond operator will read until the end of the file:
+
+my $txt;
+{ 
+  local $/ = undef;
+  open(my $fh,"<",$file) or die "Can't open file $file for reading: $!";
+  $txt = <$fh>;
+} # file will be automatically closed on exiting the block;
+

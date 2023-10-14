@@ -1,0 +1,20 @@
+Perl regex examples
+
+search for
+   perl regex examples
+   perl regex faq
+
+http://www.somacon.com/p127.php
+http://www.cs.tut.fi/~jkorpela/perl/regexp.html
+http://perldoc.perl.org/perlfaq6.html
+etc
+
+
+  s/^\s+|\s+$//g;   # trim
+
+saving regexes using qr{}
+
+doing for (m//g) {
+  # ...
+}
+

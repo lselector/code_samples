@@ -1,0 +1,32 @@
+
+Word "slice" has a specific meaning in Perl.
+
+It is a syntax allowing to access more than one element of an array or a hash.
+Basically instead of one numeric index (for array) or one key (for hash) we can use a list or array.
+
+Examples:
+(Note that when accessing elements using a slice, you use "@" instead of a "$")
+
+   $ar[$i] - accessing one element
+   $hh{$kk} - accessing one element
+   @ar[$i1,$i2] - accessing several elements using slice syntax, note usage of @
+   @hh[$k1,$k2] - accessing several elements using slice syntax, note usage of @
+
+
+You can read more here:
+   http://en.wikipedia.org/wiki/Array_slicing#1987:_Perl
+   http://wiki.preshweb.co.uk/doku.php?id=perl:hashslice
+
+Here are some more examples:
+
+perl -e '@a = (0,1,2,3,4,5,6); print @a[0..2],$/;'   # 012
+perl -e '@a = (0,1,2,3,4,5,6); print @a[3..5],$/;'   # 345
+perl -e '@a = (0,1,2,3,4,5,6); print @a[-3..-1],$/;' # 456
+
+@a[ 3.. $#a ];   # 4th element until the end
+@a[ grep { !($_ % 3) } (0...$#a) ]    # 1st, 4th and 7th element
+@a[ grep { !(($_+1) % 3) } (0..$#a) ] # every 3rd element
+
+my %hh = (one => 1, two => 2, three => 3);
+  print $hh{one},$/; # 1
+  print @hh{qw(one two three)},"$/"; # 123

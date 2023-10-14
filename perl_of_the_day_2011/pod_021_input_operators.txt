@@ -1,0 +1,29 @@
+Hello,
+
+Today few words about input operator <>.
+  http://docstore.mik.ua/orelly/perl4/prog/ch02_11.htm
+
+<$fh> - input a line from file handler $fh
+
+When you reading lines from file like this:
+   while(my $line = <$fh>) {
+     # process $line
+   }
+then you don't have to explicitly test if $line is defined, because the test is done internally for you.
+Also, even empty line is defined and has a true value, because it has end-of-line symbol "\n";
+
+Using $_ with <> operator:
+If (and only if) the line input operator is the only thing inside the conditional of a while loop (or for loop), then the value is automatically assigned to $_ (and after that it is tested to see whether it is defined). So the following lines are equivalent: 
+
+  # ----------------------------------------------------------
+  while (defined($_ = <STDIN>)) { print $_; } # the longest way 
+  while ($_ = <STDIN>) { print; }             # explicitly to $_ 
+  while (<STDIN>) { print; }                  # the short way 
+  # ----------------------------------------------------------
+  for (;<STDIN>;) { print; }            # for(;;) loop is actually internally changed to while() loop
+  # ----------------------------------------------------------
+  print $_ while defined($_ = <STDIN>); # long statement modifier 
+  print while $_ = <STDIN>;             # explicitly to $_ 
+  print while <STDIN>;                  # short statement modifier 
+  # ----------------------------------------------------------
+

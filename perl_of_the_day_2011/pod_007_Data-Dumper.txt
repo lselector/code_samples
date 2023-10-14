@@ -1,0 +1,19 @@
+Hello,
+
+Today's perl of the day - using Data::Dumper for debugging
+
+The function below accepts a reference to an array, a hash, or an object
+
+my $ss = DumpIt(\@arr);
+print $ss;
+
+# --------------------------------------------------------------
+# DumpIt() - accepts a ref to an array, a hash, or an object.
+# my $ss = DumpIt(\@arr);
+# --------------------------------------------------------------
+sub DumpIt {
+  my $varref = shift;
+  use Data::Dumper;
+  return Dumper($varref);
+}
+

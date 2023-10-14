@@ -1,0 +1,66 @@
+Hello,
+
+Frequently you need to know if a particular perl module is installed, and where is it.
+
+==================================================
+To check if a module is installed, run this command:
+    perl -e "use Somemodule;'
+If module can't be found - it will give you error message.
+==================================================
+To see where (in which directories) the standard modules are installed, run this command:
+  perl -V
+(important - it should be a capital "V")
+
+or run a simple one-liner to print the contents of @INC (include directories):
+  perl -e 'map {print $_,$/;} @INC;'
+
+==================================================
+To get a list of all installed modules:
+
+perl -MFile::Find=find -MFile::Spec::Functions -Tlw \
+  -e 'find { wanted => sub { print canonpath $_ if /\.pm\z/ }, 
+  no_chdir => 1 }, @INC'
+==================================================
+
+Folks,
+Couple days ago I emailed you commands to print out the list of installed modules.
+Today I provide implementation which is specific for our environment.
+
+For myself I have created 2 aliases:
+
+alias perl5mod='perl5   /a/e139737/bin/perl5mod.pl'
+alias perlmod='perl   /a/e139737/bin/perlmod.pl'
+
+Corresponding scripts:
+/a/e139737/bin/perlmod.pl
+# ------------------------------------------------
+#!/usr/bin/perl
+# print lsit of modules
+use strict;
+use File::Find;
+my @mods;
+sub process {
+  if($File::Find::name =~ /\.pm$/) {push @mods, $File::Find::name};
+}
+my @arr = map {;$_ .'/';} grep {$_ ne '.'} @INC; # remove current dir, add '/'
+find({wanted=>\&process,follow=>0},@arr);
+map {;print $_,$/;} sort {lc($a) cmp lc($b)} @mods;
+# ------------------------------------------------
+for old perl we need to add 2 directories to @INC:
+   use lib '/a/someuser/bin/modules', '/usr/local/db/vers/perl_lib';
+Also we need to follow links, so the code becomes:
+/a/e139737/bin/perl5mod.pl
+# ------------------------------------------------
+#!/usr/local/bin/perl5
+# create list of modules
+use strict;
+use lib '/a/someuser/bin/modules', '/usr/local/db/vers/perl_lib';
+use File::Find;
+my @mods;
+sub process {
+  if($File::Find::name =~ /\.pm$/) {push @mods, $File::Find::name};
+}
+my @arr = map {;$_ .'/';} grep {$_ ne '.'} @INC; # remove current dir, add '/'
+find({wanted=>\&process,follow=>1},@arr);
+map {;print $_,$/;} sort {lc($a) cmp lc($b)} @mods;
+# ------------------------------------------------
