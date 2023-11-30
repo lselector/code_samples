@@ -8,8 +8,9 @@ import os, sys, pytz
 import datetime as dt
 import icalendar as ic
 
-script_directory = os.path.dirname(os.path.abspath(sys.argv[0]))
-# print(script_directory)
+script_directory = os.path.dirname(os.path.abspath(__file__))
+print("Script directory:", script_directory)
+os.chdir(script_directory)
 
 # provide date and time in EST - and run
 organizer = "john.smith@gmail.com"
