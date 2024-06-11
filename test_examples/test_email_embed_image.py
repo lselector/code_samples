@@ -1,4 +1,3 @@
-#! /bin/env python2.7
 
 """
 # Send an HTML email with an embedded image for email clients supporting html
@@ -6,15 +5,11 @@
 # Note - if you want to run it - please change sender email in the script before running it
 """
 
-import os 
-os.environ["PYTHONDONTWRITEBYTECODE"] = "1" 
-os.environ["PYTHONUNBUFFERED"] = "1" 
-
-from email.MIMEMultipart import MIMEMultipart
-from email.MIMEText import MIMEText
-from email.MIMEImage import MIMEImage
+import os, sys, smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text      import MIMEText
+from email.mime.image     import MIMEImage
 import socket
-import smtplib
 
 myhost=socket.gethostname()
 my_smtp_server = 'mymailer.mydomain.com'
