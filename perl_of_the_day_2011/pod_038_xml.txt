@@ -1,0 +1,62 @@
+Hello,
+
+Today's topic - XML
+
+You can easily write your own XML parser for simple XML messages using perl regular expressions.
+But it is not appropriate for "heavy lifting".
+Fortunately Perl has very good tools for XML processing which are fast and flexible.
+They based on solid C-libraries - and combine speed of "C" and flexibility of Perl.
+
+Online tutorials and resources: 
+  http://perl-xml.sourceforge.net/faq/
+
+Good book: 
+  Perl and XML by Erik T. Ray  & Jason McIntosh - O'REILLY, 2002
+
+Online FAQs:
+  http://perl-xml.sourceforge.net/faq/
+
+There are many CPAN modules, for example:
+XML::Parser
+XML::LibXML
+XML::XPath
+XML::DOM
+XML::Simple
+XML::Twig
+Win32::OLE and MSXML.DLL
+XML::PYX
+XML::SAX
+XML::SAX::Expat
+XML::SAX::ExpatXS
+XML::SAX::Writer
+XML::SAX::Machines
+XML::XPathScript
+etc.
+etc.
+
+For many simple cases all you need is XML::Simple
+http://search.cpan.org/~grantm/XML-Simple-2.18/lib/XML/Simple.pm
+
+    use XML::Simple;
+    my $xs = XML::Simple->new(options);
+    my $ref = XMLin('/some/file.xml');
+    my $xml = $xs->XMLout($hashref);
+
+The functions may be used with different options - see documentation.
+
+You can grep for "XML" and "use" to see which XML modules are used in our existing code.
+For example:
+/a/someuser/bin/download_treasury_data.pl:use XML::XPath;
+/a/someuser/bin/formatxml.pl:use XML::Simple;
+/a/someuser/bin/get_single_rvs_series.pl:use XML::Simple;
+/a/someuser/mbs/automated_index_fetch/download_cmt_indexes.pl:use XML::XPath;
+/a/someuser/mbs/markit/bin/parse_data.pl:use XML::XPath;
+/a/someuser/mbs/markit/bin/parse_data.pl:use XML::XPath::XMLParser;
+/a/someuser/mbs/rvs/regression/testRvs.pl:use XML::DOM;
+/a/someuser/mbs/trust_rpt/bin/trust_iopo_marketing_sheet.pl:use XML::Dumper;
+/a/someuser/mbs/trust_rpt/bin/trust_iopo_marketing_sheet_new.pl:use XML::Dumper;
+
+Perl also has full support for SOAP - just google it.
+For example:
+  http://search.cpan.org/~kbrown/SOAP-0.28/lib/SOAP.pm
+

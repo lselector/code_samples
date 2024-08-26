@@ -1,0 +1,78 @@
+Hello,
+
+About downloading files from web pages.
+Here is how simple it is to download html source of a web page:
+   use LWP::Simple;  
+   my $html = get('http://www.someaddress.com');
+
+In real life you need to use proxy server, etc.
+
+    use LWP::UserAgent;
+    my $ua = LWP::UserAgent->new;
+    $ua->proxy(['http', 'ftp'] => ‘http://proxy.mycompany.net:8080’);
+    my $url =  'http://www.somedomain.no/somedir/somefile.tar.gz';
+    # $url =  'http://www.somedomain.no/somedir/somescript.cgi?par1=val1’;
+    my $req = HTTP::Request->new(GET => $url);
+    $res = $ua->request($req, "somefile.tar.gz");
+
+   if (! $res->is_success) {
+     print "ok\n";
+   } else {
+     print $res->status_line, "\n";
+   }
+
+=============================================
+
+If you need to download several files from a web page - you can do it in several steps:
+Step 1 – get the page (LWP::UserAgent or LWP::Simple) 
+Step 2 - parse its HTML to get a list of files (HTML::Parser, HTML::TreeBuilder)
+         Read this good article - http://www.perl.com/pub/2006/01/19/analyzing_html.html
+Step 3 – get the files (LWP::UserAgent) 
+
+So beginning of your perl script will probably have:
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Response;
+use HTTP::Request::Common;
+use Regexp::Common qw(URI);
+
+=============================================
+
+I recommend to buy these 2 books (I have both of them).
+  Spidering Hacks – by Kevin Hemenway, Tara Calishain (O’Reilly, 2003)
+  Perl & LWP – by Sean M. Burke (O’Reilly, 2002)
+
+Also, look at this cook-book page:
+http://search.cpan.org/~gaas/libwww-perl-5.837/lwpcook.pod
+It will give you basic examples, including how to download files – and which modules to use.
+
+=============================================
+
+Main work horse module:
+LWP::UserAgent 
+http://search.cpan.org/~gaas/libwww-perl-5.837/lib/LWP/UserAgent.pm
+
+
+But there are many-many modules which can be used
+depending on the task, for example:
+
+LWP::Simple - http://search.cpan.org/~gaas/libwww-perl-5.837/lib/LWP/Simple.pm
+LWP::UserAgent - http://search.cpan.org/~gaas/libwww-perl-5.837/lib/LWP/UserAgent.pm
+WWW::Mechanize - http://search.cpan.org/dist/WWW-Mechanize/lib/WWW/Mechanize.pm
+HTTP::Request
+HTTP::Request::Common
+HTTP::Response
+HTTP::Cookies
+WWW::Search
+HTML::Parser
+HTML::TreeBuilder 
+HTML::TokeParser 
+Template::Extract 
+etc.
+etc.
+
+Note – to find modules on cpan, google them with the word "cpan" 
+and substituting "::" by a dash, for example:
+   cpan http-response
+   cpan lwp-useragent
+

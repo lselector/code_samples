@@ -1,0 +1,3158 @@
+deep copy
+
+Try to understand how it works, ask questions.
+
+# --------------------------------------------------------------
+# deep_copy() -
+http://www.stonehenge.com/merlyn/UnixReview/col30.html
+#   my $ref_tree2 = deep_copy($ref_tree1);
+#   creates a true deep copy of multi-dimensional arrays or hashes
+# --------------------------------------------------------------
+sub deep_copy {
+  my $this = shift;
+  if (not ref $this) { # scalar - just return it
+    $this;
+  } elsif (ref $this eq "ARRAY") { # array - return ref to annonymous
+array (recursive)
+    [map deep_copy($_), @$this];
+  } elsif (ref $this eq "HASH") {  # hash  - return ref to annonymous
+hash  (recursive)
+    +{map { $_ => deep_copy($this->{$_}) } keys %$this};
+  } else { die "what type is $_?" }
+}
+Here is today-s example.
+Please run it, try to figure out how it works.
+Ask questions.
+Rewrite using my() instead of local()
+
+# ---------------------------------------------------------------
+# commify($number) - adds commas into a number: 1,234.00
+#   note: make sure you don't have 4 or more digits after the 
+#         decimal point - or it will add commas there. 
+# ---------------------------------------------------------------
+sub commify {
+  local $_  = shift;
+  1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
+  return $_;
+}
+Today I write about localtime() function.
+  http://perldoc.perl.org/functions/localtime.html
+It takes time in seconds since 1970 (epoch time) - and converts it in
+an array of values for your local time settings.
+Or, in scalar context, it returns a string with today's date and time
+- kind of like unix date command.
+
+Similar function is gmtime()
+   http://perldoc.perl.org/functions/gmtime.html
+
+Note - to receive number of epoch seconds, use time() command:
+   http://perldoc.perl.org/functions/time.html
+
+Here are couple simple example of using localtime:
+
+# --------------------------------------------------------------
+# datetime4fname() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a file name YYMMDD_HHMMSS, ex.
+050512_150645
+# --------------------------------------------------------------
+sub datetime4fname {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) =
+localtime($mytime);
+  return sprintf("%02d%02d%02d_%02d%02d%02d",$year-100,$mon+1,$mday,
+$hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime4log() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a log string, ex. 05/09/15_15:06:45
+# --------------------------------------------------------------
+sub datetime4log {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) =
+localtime($mytime);
+  return sprintf("%02d/%02d/%02d_%02d:%02d:%02d",$mon+1,$mday,$year-
+100, $hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime_wday4text() - accepts (optionally) time in seconds since
+1970
+#   returns date, day_of_week, and time in easy-readable format:
+12/31/05 - Mon - 23:59
+# --------------------------------------------------------------
+sub datetime_wday4text {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) =
+localtime($mytime);
+       my @wday = qw(Sun Mon Tue Wed Thu Fri Sat);
+       my $wd = $wday[$wday];
+  return sprintf("%02d/%02d/%02d - %s -
+%02dh:%02dm",$mon+1,$mday,$year-100,$wd, $hour,$min);
+}
+
+Today - several examples of using backticks ( ` ... `  or qx{ ... } ) 
+to take advantage of unix commands.
+
+Here is how to get current date from inside perl using unix date
+command:
+
+    chomp(my $yyyymmdd = qx{date +\%Y\%m\%d});
+
+Note - you can also use regular method using localtime() function -
+but the line above is shorter.
+I use it when I am lazy and when speed is not the main concern.
+Note also the use of chomp() to remove trailing new-line symbol.
+
+Another example - get a listing of certain files in a directory:
+
+   chomp(my @files = qx{/bin/ls -1 *.txt});
+
+Note in the example above that chomp will chomp every element of the
+array.
+
+Another example - get a result of grep command into an array:
+
+  chomp (my @fnames = qx{grep -l  mykeyword  *.txt});
+
+Another example - reading a short file:
+
+   my $txt = qx{cat  $fname};
+
+or
+
+   chomp(my @lines = qx{cat  $fname});
+Folks,
+
+Today's issue of "Perl of the day" is about cmd options and one-
+liners.
+
+Perl has many command-line options:
+   http://affy.blogspot.com/p5be/ch17.htm
+   http://www.perl.com/pub/2004/08/09/commandline.html
+   http://www.thegeekstuff.com/2010/06/perl-command-line-options/
+
+Some of them I use very often:
+
+================================
+This is how I always test my scripts:
+
+  perl  -wc  myscript.pl
+
+    where:
+       -w - turn on warnings
+       -c - compile only, don't run
+================================
+One-liners (similar to using awk) can be created with "-e" option: 
+
+  perl -e 'print "Hello World\n"'
+  perl -e 'print "$_\n" for @INC' 
+
+    where
+       -e - eval the string of code
+================================
+  You can change the file "in place"
+  # dos-2-unix as a one-liner
+  perl -pi -e 's/\r\n/\n/' myfile.txt       
+  perl -pi -e 's/word/another/g' *
+
+    where
+      -i - in-place
+      -p - read each line into $_, execute your code, and then print
+$_
+
+           you can think of -p option like this:
+             while(<>) {
+                  your code
+                  print;
+             }
+
+================================
+  Note:
+      -n is the same as -p, but it doesn't print the $_ at the end
+      -l  (line processing) - without arguments will simply add new
+line.
+================================
+Perl in many cases can be used instead of awk in a pipe-sequence, for
+example:
+
+  echo $PATH | perl -e '$_=<>;s/:/\n/g;print;' 
+  find . ... | xargs grep open | perl -nle '$ss = $_;
+@aa=split(/\/\//,$ss); print $aa[0];' | grep open 
+
+  # rename many files simultaneously (here it renames *.tar into
+*.tar7): 
+  ls -1 *.tar | perl -nle '$old=$_;s/(\.+)tar/$1tar7/;rename($old,
+$_);' - 
+
+Note in the above examples that with "-n" or "-p" option each line is
+automatically placed into $_ for you.
+But without these options you have to manually read the line using
+diamond operator <>
+
+================================
+Note - the code in one-liner should immediately follow the -e option:
+This works:
+  cat 1.txt | perl -n -e 'print $_,$/;'
+
+but this gives an error:
+  cat 1.txt | perl -e -n 'print $_,$/;' 
+
+================================
+Note - the order of options can matter
+This works:
+  perl -pi -e 's/\r\n/\n/' myfile.txt
+
+but this doesn't do anything:
+  perl -ip -e 's/\r\n/\n/' myfile.txt
+
+================================
+On MS Windows you will have to use double-quotes around a one-liner
+code.
+If you need to use doble-quotes inside the code - you will have to
+escape them.
+
+On Unix you can use single quotes. This allows to use double-quotes
+inside the code.
+
+For printing new-line you can use $/ instead of "\n"
+
+perl -e 'print "Hello World\n"'
+
+grep something somefiles* | perl -n -e 'print $_,$/;'
+
+================================
+Today's perl of the day is very short.
+If you want the script to pause and wait for you to press <Enter>,
+just add this to your code:
+
+<>;
+
+This is equivalent to 
+
+<STDIN>;
+
+Hello,
+
+Today's perl of the day - using Data::Dumper for debugging
+
+The function below accepts a reference to an array, a hash, or an
+object
+
+my $ss = DumpIt(\@arr);
+print $ss;
+
+# --------------------------------------------------------------
+# DumpIt() - accepts a ref to an array, a hash, or an object.
+# my $ss = DumpIt(\@arr);
+# --------------------------------------------------------------
+sub DumpIt {
+  my $varref = shift;
+  use Data::Dumper;
+  return Dumper($varref);
+}
+
+# ---------------------------------------------------------------
+# referencing arrays and hashes
+# ---------------------------------------------------------------
+$ss ="I am a scalar"; 
+
+$rs = \$ss;  # reference
+$tt = ref($rs); print "ref. type = $tt\n"; 
+
+### dereferencing   ${reference} 
+$test = ${$rs}; print "$test\n";       # I am a scalar 
+$test = $$rs;   print "$test\n";       # I am a scalar 
+print "--------------------------------\n"; 
+@arr = ('a1', 'a2', 'a3', 'a4', 'a5'); 
+$ra = \@arr; 
+$tt = ref($ra); print "type = $tt\n"; 
+$test = $arr[2];    print "$test\n";   # a3 
+$test = $ra->[2];   print "$test\n";   # a3 
+$test = ${$ra}[2];  print "$test\n";   # a3 
+$test = $$ra[2];    print "$test\n";   # a3 
+
+$test = $#arr;      print "$test\n";   # 4 - last index 
+$test = $#{$ra};    print "$test\n";   # 4 
+$test = $#$ra;      print "$test\n";   # 4 
+print "--------------------------------\n"; 
+%hash = ('k1' => 'v1', 'k2' => 'v2'); 
+$rh = \%hash; 
+$tt = ref($rh); print "type = $tt\n"; 
+$test = $hash{k2};  print "$test\n";   # v2 
+$test = $rh->{k2};  print "$test\n";   # v2 
+$test = ${$rh}{k2}; print "$test\n";   # v2 
+$test = $$rh{k2};   print "$test\n";   # v2 
+# ---------------------------------------------------------------
+$r->[i]->[j] 
+$r->{ki}->{kj} 
+$r->[i]->{kj} 
+$r->{ki}->[j] 
+
+create anonymous array or hash with [ ] or { }:  
+
+$ra = [ 1,2,3,4,5 ];  # create anon. array and return the reference 
+
+@arr = ('a1', 'a2', 'a3', 'a4', 'a5'); 
+$ra1 = \@arr; 
+$ra2 = [ @arr ];  # $ra2 and $ra1 reference different memory
+locations 
+
+same with hashes 
+
+$rh = {  
+ k1 => 'v1', 
+ k2 => 'v2',  
+ k3 => 'v3',  
+}; 
+# ---------------------------------------------------------------
+print "===== ARRAY:\n"; 
+@arr = ( 
+  [ 1, 2, 3], 
+  [ 4, 5, 6], 
+  [ 7, 8, 9], 
+); 
+$ra = \@arr; 
+#  3rd element of 2nd row (6) : 
+  $test = $arr[1][2];     print $test,"\n";   # 6 
+  $test = $arr[1]->[2];   print $test,"\n";   # 6 
+  $test = $ra->[1][2];    print $test,"\n";   # 6 
+  $test = $ra->[1]->[2];  print $test,"\n";   # 6 
+
+print "===== HASH:\n"; 
+%hash = ( 
+  0 => { 0 => 1, 1 => 2, 2 => 3 }, 
+  1 => { 0 => 4, 1 => 5, 2 => 6 }, 
+  2 => { 0 => 7, 1 => 8, 2 => 9 }, 
+); 
+
+$rh = \%hash; 
+#  3rd element of 2nd row (6) : 
+  $test = $hash{1}{2};    print $test,"\n";   # 6 
+  $test = $hash{1}->{2};  print $test,"\n";   # 6 
+  $test = $rh->{1}{2};    print $test,"\n";   # 6 
+  $test = $rh->{1}->{2};  print $test,"\n";   # 6 
+# ---------------------------------------------------------------
+Hello,
+
+Regular expressions - a language to specify patterns in text.
+Can be used to search and substitute.
+
+  Example using m//   match construct:
+    if ($txt =~ m/crocodile/i) {
+      print "text contains word 'crocodile'\n";
+    }
+
+  Example: here is how I trim lines using s/from/to/  substitute
+construct:
+     $line =~ s/^\s+|\s+$//msg;
+
+Perl regular expressions allow some advanced processing, like 
+lookahead (finding pattern1 only if it is followed (or not followed)
+by pattern2),
+lookbehind (extracting multiple matches into variables $1, $2, etc.),
+and so on.
+
+There are many documentation websites - google for "perlre" or
+"perlreref"
+
+   http://perl101.org/regexes.html - simple examples
+   http://perldoc.perl.org/perlreref.html  - short reference
+   http://perldoc.perl.org/perlre.html  - complete doc
+   http://perldoc.perl.org/perlfaq6.html  - some FAQs
+
+I recommend you to at least read the 101 tutorial (first link above).
+
+There is a classic book "Mastering Regular Expressions"  by Jeffrey
+E.F. Friedl
+It explains how regex engine works inside.
+It actually builds a tree, trying different paths, backtracking,
+trying other paths.
+Depending on your pattern, the matching procedure can take forever.
+Here is a simple demo how this could happen:
+   http://www.regular-expressions.info/catastrophic.html
+So you better keep your regex simple.
+
+Some notes:
+(1)
+  In most old books you see slashes "/" used as delimiters for
+regular expressions,
+  for example:
+    $txt =~ s/cat/dog/msg;
+  But for text containing paths and URLs, it is more convenient
+  to use some other delimiters, for example { } :
+    $txt =~ s{/my/original/path}{/my/another/path}msg;
+
+(2)
+  By default perl will search through multi-line text.
+  Question: will . match "\n" ? 
+  Answer:  No, but you can make it match using "s" option:
+    s  (single line) - . matches \n
+
+  Question: will ^ and $ match begining and end of lines inside multi
+-line text?
+  Answer: No, but you can make them match using "m" option:
+    m  (multiline)   - ^ and $ match internal lines inside multi-line
+text
+
+In most cases when working with multiline text you want both options.
+
+(3)
+  other commonly used options:
+    i - case-insensitive matching
+    g - global (don't stop after matching, continue searching)
+    x - allows to split regex into several lines and add comments for
+clarity
+
+(4)
+  unix command "grep" on linux has option "-P" to use perlre syntax!
+    grep -P '\bopen\b'
+      here \b means 'word boundary'
+
+
+
+Here is a simple procedure to parse a line of a CSV file
+
+# --------------------------------------------------------------
+# myCSVsplit
+# my ref_to_fields_arr = myCSVsplit($line)
+#   accepts 1 line from the CSV file (Comma-Separated Value)
+#   returns ref to an array of fields
+#   code borrowed and simplified from CSV.pm module
+# --------------------------------------------------------------
+sub myCSVsplit {
+  my $line = shift;
+  my @fields = ();
+  my $t;
+  chomp $line;
+  return @fields if (length($line) == 0);
+  my $comma;
+
+  while ($line =~ m{          ## start match with comments
+    (?=.)                     ## Lookahead for a "." in $line but do
+not include it in $1
+    (                         ## capture into $1
+        (?:                   ## do not capture the quotes
+           "((?:""|[^"]+)*)"  ## optional capture of stuff between
+quotes into $2
+        )?                    ## end of optional grouping
+        ([^,]*)               ## capture into $3
+    )                         ## end of $1
+    (,?)                      ## capture optional comma into $4
+    }sgx) {                   ## options: s - single_line (. matches
+"\n"), g - global, x - allow comments
+
+    $comma = $4;
+
+    if (defined($2) && !length($3)) {  # field was quoted, need to
+change "" -> "
+      ($t = $2) =~ s{""}{\"}xmsg;
+      push(@fields, $t);
+    } else {
+      push(@fields, $1);
+    }
+
+  } # end of while()
+
+  push(@fields, "") if $comma;
+  return \@fields;
+
+}
+
+Here is a famous example from a Friedl's regex book.
+This is a regex to match an email address:
+http://www.diablotin.com/librairie/autres/mre/chBB.html
+
+The web page explains it.
+I never seen it used anywhere.
+But it is an interesting achievement.
+Here it is - enjoy.
+
+[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\
+xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:(?:[^(\040)<>@,;:".\\\[\]\000-
+\037\x80-\xff]+(?![^(
+\040)<>@,;:".\\\[\]\000-\037\x80-\xff])|"[^\\\x80-
+\xff\n\015"]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015"]*)*")[\04
+0\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\
+n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:\.[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(?:(?:\\[^\x80-\
+xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015()]*)*\))[^\\\x80-\xff\n\015()]*)*\)[\040\t]
+*)*(?:[^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff])|"[^\\\x80-\xff\n
+\015"]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015"]*)*")[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-
+\xff]|\(
+[^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015()]*)*\))[^\\\x80-\xff\n\015()]*)*\)[\040\t]*)*)*@[
+\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\x
+ff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff]+(?![^(\040
+)<>@,;:".\\\[\]\000-\037\x80-\xff])|\[(?:[^\\\x80-
+\xff\n\015\[\]]|\\[^\x80-\xff])*\])[\040\t]*(?:\([^\\\x80-\x
+ff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80
+-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x8
+0-\xff\n\015()]*)*\)[\040\t]*)*(?:\.[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff\
+n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:"
+.\\\[\]\000-\037\x80-\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff])|\[(?:[^\\\x80-\xff\n\015\[\]]|\\[^\x8
+0-\xff])*\])[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-
+\xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xf
+f][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*)*|(?:[^(\040)<>@,;:".\\\[\]\000-
+\037\x80-
+\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff])|"[^\\\x80-
+\xff\n\015"]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\01
+5"]*)*")[^()<>@,;:".\\\[\]\x80-\xff\000-\010\012-
+\037]*(?:(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([
+^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015()]*)*\))[^\\\x80-\xff\n\015()]*)*\)|"[^\\\x80-\xff\
+n\015"]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015"]*)*")[^()<>@,;:".\\\[\]\x80-\xff\000-\010\012-
+\037]*)*<[\040\t]*
+(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015
+()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:@[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\
+([^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015()]*)*\))[^\\\x80-\xff\n\015()]*)*\)[\040\t]*)*(?:
+[^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff])|\[(?:[^\\\x80-
+\xff\n\0
+15\[\]]|\\[^\x80-\xff])*\])[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff\n\015()]*
+(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:\.[\040\t]*(?:\([^\\\x80
+-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\
+\x80-\xff\n\015()]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:".\\\[\]\000-
+\037\x80-\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\
+037\x80-\xff])|\[(?:[^\\\x80-\xff\n\015\[\]]|\\[^\x80-
+\xff])*\])[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[
+^\x80-\xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015()]*)*\))[^\\\x80-\xff\n\015()]*)*\)[
+\040\t]*)*)*(?:,[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-
+\xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80
+-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*@[\040\t]*(?:\([^\\\x80-\xff\n\015()]*
+(?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80-
+\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-\xff\n\015
+()]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff])|
+\[(?:[^\\\x80-\xff\n\015\[\]]|\\[^\x80-
+\xff])*\])[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-
+\xff]|\([
+^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015()]*)*\))[^\\\x80-\xff\n\015()]*)*\)[\040\t]*)*(?:\.
+[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\
+xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff]+(?![^(\04
+0)<>@,;:".\\\[\]\000-\037\x80-\xff])|\[(?:[^\\\x80-
+\xff\n\015\[\]]|\\[^\x80-\xff])*\])[\040\t]*(?:\([^\\\x80-\
+xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x
+80-\xff\n\015()]*)*\)[\040\t]*)*)*)*:[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff
+\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*)?(?:[^(\040)<>@,
+;:".\\\[\]\000-\037\x80-\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff])|"[^\\\x80-\xff\n\015"]*(?:\\[^\x80
+-\xff][^\\\x80-\xff\n\015"]*)*")[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff\n\01
+5()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:\.[\040\t]*(?:\([^\
+\\x80-\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\)
+)[^\\\x80-\xff\n\015()]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:".\\\[\]\000-
+\037\x80-\xff]+(?![^(\040)<>@,;:".\\\[\]\
+000-\037\x80-\xff])|"[^\\\x80-\xff\n\015"]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015"]*)*")[\040\t]*(?:\([^\\\x80-\
+xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-
+\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x
+80-\xff\n\015()]*)*\)[\040\t]*)*)*@[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff\n
+\015()]*(?:\\[^\x80-\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:".
+\\\[\]\000-\037\x80-\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff])|\[(?:[^\\\x80-\xff\n\015\[\]]|\\[^\x80
+-\xff])*\])[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-
+\xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff
+][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-
+\xff\n\015()]*)*\)[\040\t]*)*(?:\.[\040\t]*(?:\([^\\\x80-
+\xff\n\015()]*(
+?:(?:\\[^\x80-\xff]|\([^\\\x80-\xff\n\015()]*(?:\\[^\x80-
+\xff][^\\\x80-\xff\n\015()]*)*\))[^\\\x80-\xff\n\015(
+)]*)*\)[\040\t]*)*(?:[^(\040)<>@,;:".\\\[\]\000-\037\x80-
+\xff]+(?![^(\040)<>@,;:".\\\[\]\000-\037\x80-\xff])|\
+[(?:[^\\\x80-\xff\n\015\[\]]|\\[^\x80-
+\xff])*\])[\040\t]*(?:\([^\\\x80-\xff\n\015()]*(?:(?:\\[^\x80-
+\xff]|\([^
+\\\x80-\xff\n\015()]*(?:\\[^\x80-\xff][^\\\x80-
+\xff\n\015()]*)*\))[^\\\x80-\xff\n\015()]*)*\)[\040\t]*)*)*>)
+
+
+map & grep functions
+
+Explained very well in this old article:
+http://usenix.org/publications/login/1998-6/perl.html
+
+map() transforms, grep() filters.
+
+I usually add ";" right after the openning curly to tell perl 
+that this is a piece of code and not an anonymous hash.
+Like this:
+@result = map {; code } list;
+@result = grep {; code } list 
+
+Note also that there is no comma after closing curly.
+
+For each element of the list
+the element is put into the $_, then the expression
+in curlies is evaluated, the result of last operation 
+in curlies is returned into the result.
+Example:
+  @times_ten = map {; $_ * 10 } 1..10; 
+
+Here is a frequent idiom - populate hash from array:
+
+my %hh;
+%hh = map { $_ => 1 } @arr; 
+Today's topic is Schwartzian Transform.
+
+http://en.wikipedia.org/wiki/Schwartzian_transform
+
+This is basically a 3-step sorting method proposed by Randal
+Schwartz.
+   http://www.stonehenge.com/merlyn/
+   http://www.stonehenge.com/merlyn/UnixReview/col64.html
+
+For example, let's say you have a list of emails - and you want to
+sort them by domain name.
+Here is how it is done:
+
+my @sorteddata =                           # Schwartzian Transform: 
+  map {$_->[0]}                            # map back 
+  sort { $a->[1] cmp $b->[1] }             # sort by cleanned element 
+  map { m/@([a-zA-Z0-9\-.]*)\b/; [$_, $1]} # map to a list anon.2-element arrays 
+  @data; 
+
+Explanation:
+
+Read the above statement from bottom to top (from right to left, from
+end to beginning)
+
+Step1:
+   use map to convert each email from @data array into an anonymous
+array with 2 elements: [email, domain]
+   so now you have array of anonymous arrays
+
+Step2:
+   sort this array by domain
+   Now you have sorted array of anonymous arrays 
+
+Step3:
+   use map to extract emails from sorted array
+
+Hello,
+
+Today we talk about output unbufferring.
+
+By default, file handlers in perl are buffered (except for STDERR).
+So you may be printing something out into a file - but nothing would
+show up.
+If your script sends STDOUT and STDERR into the same log or on the
+screen, 
+the order of output lines may be wrong (because STDOUT output may be
+delayed in the buffer, whereas STDERR goes out without delays).
+
+Thus I usually unbuffer STDOUT.
+
+Similarly, if I am writing into a file and want to monitor its
+growth, I 
+would want to unbuffer its file handle too.
+
+The easy way to unbuffer the STDOUT handler is to set variable $| to 
+something which is true, for example:
+   $| = 1;
+
+Note: false values in perl are:
+  undef
+  zero number
+  empty string - really empty, no spaces
+  "0" - string containing one zero and no other characters
+
+If you want to unbuffer some other handle - you need to select it
+first.
+  http://perldoc.perl.org/functions/select.html
+
+For example:
+
+open(my $fh,">",$myfile)
+  or die "Can't open file $myfile for writing: $!";
+my $oldfh = select($fh);  # select returns previous selected file handle (probably STDOUT)
+$| = 1;                   # unbuffer $fh 
+select($oldfh);           # select previous file handle (probably STDOUT)
+
+
+I prefer to use explicit autoflash method from IO::Handle:
+
+use IO::Handle;          # this exports autoflash() (and some useful
+methods)
+*STDOUT->autoflush();    # autoflush to ensure proper logging
+*STDERR->autoflush();    # autoflush to ensure proper logging
+*STDERR = *STDOUT;       # redirect STDERR into STDOUT for proper
+logging
+                         # (if this is what you want to do)
+
+open(my $fh, ">", $myfile)
+  or die "Can't open file $myfile for writing: $!";
+$fh->autoflush();
+print {$fh} "Hello\n";
+
+
+# right and wrong ways to initialize an empty array or hash
+
+use strict ;
+
+my %hh1;
+for (keys %hh1){ print"hh1\n"; }
+
+my @ar1;
+for (@ar1) { print"aa1\n"; }
+
+my %hh2 = ();
+for (keys %hh2){ print"hh2\n"; }
+
+my @ar2 = ();
+for (@ar2) { print"aa2\n"; }
+
+my %hh3 = undef;  # wrong - adds one element with key = undef value,
+will give warning during compilation
+for (keys %hh3){ print"hh3\n"; }
+
+my @ar3 = undef;  # wrong - adds one element with undef value to
+array
+for (@ar3) { print"aa3\n"; }
+
+print "-----------references\n";
+
+my $hh4;
+for (keys %$hh4){ print"hh4\n"; }
+
+my $ar4;
+for (@$ar4) { print"aa4\n"; }
+
+my $hh5 = {};
+for (keys %$hh5){ print"hh5\n"; }
+
+my $ar5 = [];
+for (@$ar5) { print"aa5\n"; }
+
+my $hh6 = undef;
+for (keys %$hh6){ print"hh6\n"; }
+
+my $ar6 = undef;
+for (@$ar6) { print"aa6\n"; }
+
+Word "slice" has a specific meaning in Perl.
+
+It is a syntax allowing to access more than one element of an array
+or a hash.
+Basically instead of one numeric index (for array) or one key (for
+hash) we can use a list or array.
+
+Examples:
+(Note that when accessing elements using a slice, you use "@" instead
+of a "$")
+
+   $ar[$i] - accessing one element
+   $hh{$kk} - accessing one element
+   @ar[$i1,$i2] - accessing several elements using slice syntax, note
+usage of @
+   @hh[$k1,$k2] - accessing several elements using slice syntax, note
+usage of @
+
+
+You can read more here:
+   http://en.wikipedia.org/wiki/Array_slicing#1987:_Perl
+   http://wiki.preshweb.co.uk/doku.php?id=perl:hashslice
+
+Here are some more examples:
+
+perl -e '@a = (0,1,2,3,4,5,6); print @a[0..2],$/;'   # 012
+perl -e '@a = (0,1,2,3,4,5,6); print @a[3..5],$/;'   # 345
+perl -e '@a = (0,1,2,3,4,5,6); print @a[-3..-1],$/;' # 456
+
+@a[ 3.. $#a ];   # 4th element until the end
+@a[ grep { !($_ % 3) } (0...$#a) ]    # 1st, 4th and 7th element
+@a[ grep { !(($_+1) % 3) } (0..$#a) ] # every 3rd element
+
+my %hh = (one => 1, two => 2, three => 3);
+  print $hh{one},$/; # 1
+  print @hh{qw(one two three)},"$/"; # 123
+Today's issue is about Perl's classes and objects.
+
+New Perl 6 does have classes and objects as part of the language.
+But Perl 6 is not available yet for production use.
+
+Perl 5 doesn't have classes as part of the language.
+There are modules which implement complete OO framework (see father
+below),
+but mostly programmers use simple objects implemented as following:
+  - a module's namespace (a package) as a class name
+  - anonymous hash as an object.
+    use bless() function to change the label on this hash
+    (to tell perl that this is an object, and not just a hash)
+  - the constructor is  a function with any name (usually new())
+    which creates an anonymous hash, changes the label using bless()
+function, 
+    does some initialization of hash elements, and returns reference
+to this hash.
+
+I highly recommend this tutorial:
+  http://perldoc.perl.org/perltoot.html
+
+The mechanism described above is very simple. 
+It doesn't support privacy, though.
+If you want a framework which supports proper OOP paradigms - google
+for "inside-out objects".
+You can read this:
+  http://www.stonehenge.com/merlyn/UnixReview/col63.html
+Or search CPAN for Class::Std
+  http://search.cpan.org/~dconway/Class-Std-0.011/lib/Class/Std.pm
+
+Today some fun
+
+JAPH is a small Perl program which prints "Just another Perl hacker," 
+
+Here are examples on CPAN:
+  http://www.cpan.org/misc/japh
+
+You can see programs written as a camel or as a double-helix, etc.
+
+Here is the wikipedia page:
+  http://en.wikipedia.org/wiki/Just_another_Perl_hacker
+
+also google for 
+   obfuscated perl
+   obfuscated c
+http://en.wikipedia.org/wiki/Obfuscated_Perl_Contest
+http://www.ioccc.org/
+
+example:
+   http://www0.us.ioccc.org/years.html
+
+Here is a famous Damian Conway's program which won and obfuscated
+contest:
+=================================================================
+#!/usr/local/bin/perl -sw 
+$;=$/;seek+DATA,!++$/,!$s;$_=<DATA>;
+$s&&print||$g&&do{$y=($x||=20)*($y||8);sub 
+i{sleep&f}sub'p{print$;x$=,join$;,$b=~/.{$x}/g}$j=$j;sub'f{pop}sub 
+n{substr($b,&f%$y,3)=~tr,O,O,}sub'g{$f=&f-
+1;($w,$w,substr($b,&f,1),O)[n($f-$x)+ 
+n($x+$f)-
+(substr($b,&f,1)eq+O)+n$f]||$w}$w="\40";$b=join'',@ARGV?<>:$_,$w 
+x$y;$b=~s).)$&=~/\w/?O:$w)ge;substr($b,$y)=q++;$g='$i=0;$i?$b:$c=$b; 
+substr+$c,$i,1,g$i;$g=~s?\d+?($&+1)%$y?e;$i-$y+1?eval$g:do{$i=-
+1;$b=$c;p;i 
+1}';sub'e{eval$g;&e}e}||eval||die+No.$; 
+__DATA__ 
+if($j){{$^W=$|;*_=sub{$=+s=#([A-z])(.*)#=#$+$1#=g}} 
+@s=(q[$_=sprintf+pop@s,@s],q[ 
+if($j){{$^W=$|;*_=sub{$=+s=#([A-z])(.*)#=#$+$1#=g}}    
+#_The_Perl_Journal_# 
+@s=(q[%s],q[%s])x2;%s;print"\n"x&_,$_;i$j;eval} 
+])x2;$_=sprintf+pop@s,@s;print"\n"x&_,$_;i$j;eval}$/=$y;$"=",";print 
+q<#!/usr/local/bin/perl -sw 
+if(!$s){>.($_=<>).q<}else{@s=(q[printf+pop@s,@s],
+q[#!/usr/local/bin/perl -sw 
+if(!$s){>.(s$%$%%$g,tr=[=[===tr=]=]=||&d,$_).q<}else{@s=(q[%s],
+q[%s])x2;%s} 
+])x2;printf+pop@s,@s} 
+> 
+=================================================================
+His code was called SelfGOL, and did one of four things: 
+  1. played the game of life:  selfgol -g -x=width -y=height 
+  2. printed itself as output:  selfgol -s 
+  3. print a scrolling marquee:  selfgol -d="banner" 
+  4. modify a program to print itself as output: selfgol progname 
+It did all this in under 1000 bytes of code.
+The code doesn't contain any regular control structures
+(like while, if, unless, until, for).
+It has some goto()s, some recursion, and some beautiful eval-crafted
+loops: 
+
+  $g = '$i=0; 
+        $i? $b : $c = $b; 
+        substr +$c, $i, 1, g $i; 
+        $g =~ s?\d+? ($&+1)%$y ?e; 
+        $i - $y + 1 ? eval $g 
+                    : do{ $b=$c; p; i }'; 
+
+The best part is the self-replicating code, which uses the standard
+quine code: 
+  @s=( 
+    q[printf pop@s, @s], 
+    q[@s=(q[%s],q[%s])x2;%s], 
+  )x2; 
+  printf pop @s, @s; 
+
+Here is the famous Damian's quote:
+  "The only thing better than self-modifying code is code that
+modifies itself before it does so."  
+
+
+
+
+When you pass arguments to a subroutine, they are 
+accessible from inside the subroutine via array @_.
+Note: 
+Elements of @_ are aliases to external variables.
+Thus if you change elements of this array, you will 
+change values outside the sub.
+Sometimes this is exactly what you want, for example:
+
+sub str_clean {
+  $_[0] =~ s/^\s+|\s+$//msg;
+}
+
+my $str = "  crocodile  \n  \n  ";
+str_clean($str);
+print ">$str<",$/;
+
+Sometimes you want to create "local" variables.
+You can create them either with function my(), or local().
+  my() is used to create a trully lexically scoped variable (not seen
+from outside).
+  local() is used to temporarily substitute external variable.
+
+Examples:
+   sub func1 {
+     my ($var1,$var2) = @_;
+     # do somthing
+   } 
+   
+   sub func2 {
+     local $/ = undef;
+     # do something
+   }  
+
+Example using shift() function to take values of @_ into my()
+variables:
+   sub func3 {
+     my $var1 = shift;
+     my $var2 = shift;
+     # do somthing
+   } 
+
+When passing arrays or hashes into a sub, it is a good idea to pass
+them by reference,
+for example:
+
+sub func4 {
+  my $ref2arr = shift;
+  for my $elem (@$ref2arr) {
+    print "$elem\n";
+  }
+}
+
+my @arr = (1,2,3,4);
+func4(\@arr);
+
+Hello,
+
+It is worth repeating that false values in perl are:
+  undef - undefined value
+  0     - zero number
+  ""    - empty string - really empty, no spaces
+  "0"   - string containing one zero and no other characters
+
+Note - if you have warnings turned on   (via using "-w" option or via
+saying:  use warnings;)
+then you may get warnings like this:
+
+    Use of uninitialized value at test.pl line 8.
+
+Note - you only will get them if you are trying to do math operation
+or comparison with the undefined value, for example:
+
+use strict ;
+use warnings;
+my $aa = undef;
+if ($aa > 0) {
+   ...
+
+If you just say
+     if ($aa)   or     if (!$aa)
+then there will be no warning.
+Hello,
+
+Today few words about input operator <>.
+  http://docstore.mik.ua/orelly/perl4/prog/ch02_11.htm
+
+<$fh> - input a line from file handler $fh
+
+When you reading lines from file like this:
+   while(my $line = <$fh>) {
+     # process $line
+   }
+then you don't have to explicitly test if $line is defined, because
+the test is done internally for you.
+Also, even empty line is defined and has a true value, because it has
+end-of-line symbol "\n";
+
+Using $_ with <> operator:
+If (and only if) the line input operator is the only thing inside the
+conditional of a while loop (or for loop), then the value is
+automatically assigned to $_ (and after that it is tested to see
+whether it is defined). So the following lines are equivalent: 
+
+  # ----------------------------------------------------------
+  while (defined($_ = <STDIN>)) { print $_; } # the longest way 
+  while ($_ = <STDIN>) { print; }             # explicitly to $_ 
+  while (<STDIN>) { print; }                  # the short way 
+  # ----------------------------------------------------------
+  for (;<STDIN>;) { print; }            # for(;;) loop is actually
+internally changed to while() loop
+  # ----------------------------------------------------------
+  print $_ while defined($_ = <STDIN>); # long statement modifier 
+  print while $_ = <STDIN>;             # explicitly to $_ 
+  print while <STDIN>;                  # short statement modifier 
+  # ----------------------------------------------------------
+
+Hello,
+
+Below is an example of how to do substitutions in multiple files "in
+place".
+This was already discussed earlier, but worth repeating.
+We will sue 3 options:
+ -e - execute the perl code provided on cmd line
+ -p - read each line into $_, execute your code, and then print $_
+ -i  - "in place", that is, print into the original file (change the
+original)
+
+Note: in the command below the order of cmd options "p" and "i" is
+important.
+  "-pi"  works, but   "-ip"   doesn't work.
+
+perl -pi -e 's{/a/n142420/L2/bin/runCmds.pl}{../bin/runCmds.pl}g;'
+*.sh
+
+The command above runs a substitute command s{}{}g  on contents of
+all *.sh files.
+Namely, it looks for a pattern like this:
+
+    /a/n142420/L2/bin/runCmds.pl
+
+and substitutes it to relative path:
+
+    ../bin/runCmds.pl
+
+Removing duplicates using hash
+
+# -------------------------------------
+my @data = qw(aa bb cc aa bb cc);  # array contains some duplicates
+print @data,"\n";
+
+my %hh; 
+@hh{@data} = ();     # intialize hash to undef values using slice
+syntax 
+@data = sort keys %hh; # put unique values back into the array
+print @data,"\n";
+
+# -------------------------------------
+# shorter way - using annonymous hash.
+# note %{{  }} - double-curlies are here for a reason
+# -------------------------------------
+my @data = qw(aa bb cc aa bb cc);  # array contains some duplicates
+print @data,"\n";
+
+@data = sort keys %{{map {$_ => 1} @data}};
+print @data,"\n";
+Hello
+
+The diamond operator < ... > is used to read text files as it is
+breaking file into pieces ending with the value in $/ variable
+(usually "\n");
+To read binary files we can use read() function to read certain
+number of bytes into a scalar buffer:
+http://www.perlmonks.org/?node=perlfunc%3Aread
+
+read(fh, buffer, nbytes, offset)
+read(fh, buffer, nbytes)
+
+Here is an example of small script which can read any file (text or
+binary) - and show its contents in hexadecimal format.
+
+#!/usr/local/bin/perl5
+
+# ---------------------------------------------------------------
+# xdump - hexadecimal viewer
+# It can read from STDIN or from a file
+# Usage: xdump [file]
+# ---------------------------------------------------------------
+
+use strict;
+
+# -----------------------------------------
+# Use the file they specified, if specified 
+# -----------------------------------------
+if ($ARGV[0]) {
+  open(STDIN,$ARGV[0]) or die "Can't open $ARGV[0]: $!\n";
+}
+
+# -----------------------------------------
+# Do it optimall as long as we can read 16 bytes at a time.
+# -----------------------------------------
+my ($len, $data, @array);
+my $offset = 0;
+
+while (($len = read(STDIN,$data,16)) == 16) {
+  @array = unpack('N4', $data);
+  $data =~tr/\0-\37\177-\377/./;
+  printf "%8.08x    %8.08x  %8.08x  %8.08x  %8.08x 
+%s\n",$offset,@array,$data;
+  $offset += 16;
+}
+
+# -----------------------------------------
+# Now finish up the end a byte at a time.
+# -----------------------------------------
+if ($len) {
+  @array = unpack('C*', $data);
+  $data =~y/\0-\37\177-\377/./;
+  for (@array) {
+    $_ = sprintf('%2.2x', $_);
+  }
+  push(@array, '  ') while $len++ < 16;
+  $data =~ s/[^ -~]/./g;
+  printf "%8.08x    ",$offset;
+  printf "%s%s%s%s  %s%s%s%s  %s%s%s%s  %s%s%s%s  %s\n",@array,
+$data;
+}
+
+__END__
+
+
+
+Hello,
+
+To write into binary:
+  open()
+  binmode()
+  print()
+  close()
+
+Here is a good summary articles showing handling text and binary
+files for reading and writing.
+  http://www.perlfect.com/articles/perlfile.shtml
+  http://oreilly.com/catalog/cookbook/chapter/ch08.html
+  http://www.devx.com/DevX/Tip/17116
+  
+And here is a short script demonstrating how to make a binary copy of
+a file:
+
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+$| = 1;
+
+my $srcfile = "1.txt";
+my $dstfile = "2.txt";
+unlink $dstfile if (-e $dstfile);
+copy_file($srcfile, $dstfile);
+exit;
+
+# ---------------------------------------------------------------
+# copy_file($srcfile, $dstfile)
+# ---------------------------------------------------------------
+sub copy_file {
+  my ($srcfile, $dstfile) = @_;
+  my $buffer;
+  my $bufsize = 65536;
+
+  open (my $infh, $srcfile) or die "\nCan't open $srcfile for
+reading: $!\n";
+  open (my $outfh, ">", $dstfile) or die "\nCan not open $dstfile for
+writing: $!\n";
+
+  binmode($infh);
+  binmode($outfh);
+
+  my $nbytes = 0;
+  while () {
+    $nbytes = read($infh, $buffer, $bufsize);
+    last if (!defined $nbytes || $nbytes == 0);
+    print {$outfh} $buffer;
+  };
+
+  die "Problem copying: $!\n" if not defined $nbytes;
+
+  close($outfh) or die "Can't close $dstfile: $!\n";
+  close($infh)  or die "Can't close $srcfile: $!\n";
+}
+
+Note
+  There is also another way - using write() function. 
+  It is NOT oposite of read. 
+  write() uses formatted output - something that is used 
+  very rarely in my experience. 
+  Basically you can define a format and associate it with file
+handler. 
+  Then write() function will write a formattedrecord into the file
+using this format.
+
+Hello,
+
+In perl you can create anonymous arrays, hashes, and subroutines -
+and return a reference, for example:
+
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+
+# --------------------------------------
+# array:
+my   $ra = [1,2,3,"mama"];
+print $ra->[1],"\n";    # prints 2
+
+# --------------------------------------
+# hash:
+my   $rh = { kk1 => "vv1", kk2 => "vv2" };
+print $rh->{kk2},"\n";    # prints vv2
+
+# --------------------------------------
+# subroutine
+my $rs = sub { print $_[0],"\n"; };
+$rs->("one");   # prints one
+
+# --------------------------------------
+# now the same - but without middleman
+sub { print $_[0],"\n"; }->("two");
+
+# --------------------------------------
+# now pass anonymous sub into another sub
+sub mysub { $_[0]->($_[1]); }
+mysub ( $rs , "three"  ); # prints three
+
+
+Functions map(), grep(), sort() accept reference to annonymous
+subroutine as the first argument.
+
+my @arr1 = (4,3,2,1);
+my @arr2 = ();
+print @arr1,$/;
+
+@arr2 = sort { $a <=> $b } @arr1;
+print @arr2,$/;
+
+my $rs = sub { $a <=> $b };
+@arr2 = sort $rs @arr1; # here we explicitly pass reference $rs to
+the sub
+print @arr2,$/;
+
+Note:
+  people use 2 equivalent forms of map and grep functions, for
+example for map:
+  @result = map(expression, list); 
+  @result = map { code } list;
+
+Specific examples:
+  @result = map $_ * 10, @arr;
+  @result = map { $_ * 10 } @arr;
+
+Note that in the 2nd form (with the code block in curilies) there is
+no need to put a comma to separate 2 arguments (code and list).
+
+Hello,
+
+splice() - a function to add/remove elements anywhere in an array 
+
+splice ARRAY,OFFSET,LENGTH 
+splice ARRAY,OFFSET 
+splice ARRAY,OFFSET,LENGTH,LIST 
+
+Removes the elements designated by OFFSET and LENGTH from an array,
+  and replaces them with the elements of LIST, if any.
+If LENGTH is omitted, removes everything from OFFSET onward.
+
+In list context, returns the elements removed from the array.
+In scalar context, returns the last element removed, or undef if no
+elements are removed.
+The array grows or shrinks as necessary.
+If OFFSET is negative then it start that far from the end of the
+array.
+If LENGTH is negative, leave that many elements off the end of the
+array. 
+
+Simple example - sequentially taking up to 3 elements from the array:
+
+my @ar = qw( aa bb cc dd ee ff gg hh kk ll mm );
+print "@ar\n";
+
+my $pos=0;
+my $len=3;
+my @pp=();
+my @tmp = @ar; # make a copy, because splice destroys the original
+while (@pp = splice(@tmp,$pos,$len)) {
+  print "@pp\n";
+}
+
+Output:
+aa bb cc dd ee ff gg hh kk ll mm
+aa bb cc
+dd ee ff
+gg hh kk
+ll mm
+
+Hello,
+
+Here-docs is a way to specify a multi-string text, for example:
+
+my $str = <<EOT;
+some text1
+some text2
+EOT
+
+print $str,$/;
+ 
+the EOT can be any word.
+
+Important that at the end of the here-doc this word is at the very
+beginning of the line, and it is the only thing on the line.
+
+Perl supports here-docs similar to how shells support them.
+See here:  http://en.wikipedia.org/wiki/Here_document
+
+By default the content of the text is treated as it is in double-
+quotes.
+You can explicitly specify what kind of quotes you want to use by
+specifying them around the word like this:
+
+my $city = 'New York';
+
+my $str1 = <<'END';
+city = $city
+END
+
+print $str1,$/;   # prints city = $city
+
+my $str2 = <<"END";
+city = $city
+END
+print $str2,$/;   # prints city = New York
+
+You can start more than one here-doc on one line, for example:
+
+$m='mama';
+$p='papa';
+print "---------------------\n";
+
+&mumu(<<'EOT1' ,  <<"EOT2");
+$m
+$p
+EOT1
+$m
+$p
+EOT2
+print "---------------------\n";
+
+sub mumu {
+ my $s1 = shift;
+ my $s2 = shift;
+ print "$s1$s2\n";
+}
+
+Hello,
+
+Today few misc. examples.
+# --------------------------------
+# return value of matching:
+#   depending on whether we use memory braces or not
+#   and on the context, the return value may be 
+#   the number of matches, or one or more matched values.
+# --------------------------------
+$sss0 = " a1 a2 a3 a4 a5 "; 
+$sss = $sss0; 
+$a = ($sss =~ m/a\d/);    print "$a\n";    # 1 
+$a = ($sss =~ m/(a\d)/);  print "$a\n";    # 1 
+@a = ($sss =~ m/a\d/);    print "@a\n";    # 1 
+@a = ($sss =~ m/(a\d)/);  print "@a\n";    # a1 
+@a = ($sss =~ m/(a\d)/g); print "@a\n";    # a1 a2 a3 a4 a5 
+print "-----------------------------------\n"; 
+$sss = $sss0; 
+$a = ($sss =~ s/a\d/p/);  print "$a\n";    # 1 
+$sss = $sss0; 
+$a = ($sss =~ s/a\d/p/g); print "$a\n";    # 5 
+$sss = $sss0; 
+@a = ($sss =~ s/a\d/p/g); print "@a\n";    # 5 
+print "-----------------------------------\n"; 
+$sss = $sss0; 
+$a = ($sss =~ tr/a/b/);   print "$a\n";    # 5 
+$sss = $sss0; 
+@a = ($sss =~ tr/a/b/);   print "@a\n";    # 5 
+print "-----------------------------------\n"; 
+
+# --------------------------------
+# Examples of split: 
+# --------------------------------
+   ($a) = (split /:/)[-1]; 
+   ($a,$b,$c) = split; 
+
+# --------------------------------
+# Examples of map and grep: 
+# --------------------------------
+@arr2 = map { list context } @arr1; 
+@arr2 = map /   /, @arr1; 
+@arr2 = map { /(   )/ } @arr1; 
+
+@arr2 = grep { scalar context } @arr1; 
+$count = grep !$_ , @arr1; 
+
+Folks,
+
+Today's perl tip is about context.
+In perl the same expression may work differently depending on the
+"context".
+For example, an array in list context will return the whole array, 
+but in scalar context will return the scalar value - the number of
+elements in the array.
+When you writing your own function and want it to return different
+things depending on the context in which it is called - you can use
+built-in function  wantarray
+http://perldoc.perl.org/functions/wantarray.html
+
+Here are some examples of handling context
+
+[ ] - anonymous array constructor is an operator - creates a list
+context 
+
+sub arrayish { print "arrayish\n" if wantarray } 
+$a = arrayish();   #nope 
+$a = (arrayish()); #nope 
+$a = [ arrayish() ]; # arrayish 
+($a) = arrayish();   # arrayish 
+
+---------------------------------------------------------------------
+-----------
+you can use [..] or (..)[..] to force list context 
+
+$wordlist_ref = [  split /\+/, $str ]  # correct 
+$wordlist_ref = \( split /\+/, $str )  # WRONG - creates a scalar ref
+to last fragment from split. 
+
+---------------------------------------------------------------------
+-----------
+parentheses don't create list context 
+
+#!/usr/bin/perl
+use strict ;
+use warnings;
+package golf; 
+my $aa = 1;
+$aa = (1..10);        # $aa is now undefined; 
+print "-- $aa --\n";  # --  --
+
+---------------------------------------------------------------------
+-----------
+[ ] creates a reference to anonymous array: 
+
+my $aref = [1..3]; 
+print ref $aref, " @$aref\n";  # ARRAY 1 2 3 
+
+---------------------------------------------------------------------
+-----------
+Interpolating expressions in "" strings (or here doc strings) with
+@{[..]}: 
+
+package golf; 
+sub new { bless {} }; 
+sub name { 'Tiger' }; 
+
+package main; 
+my $gg = new golf; 
+my $name = $gg->name; 
+print "$name -- $gg->name\n";       # WRONG:   Tiger --
+golf=HASH(0xabc50)->name 
+print "$name -- @{[$gg->name]}\n";  # correct: Tiger -- Tiger 
+
+---------------------------------------------------------------------
+-----------
+Make a copy of a list with [ ]: 
+
+@a_copy = @a;  # explicit named copy 
+@{[@a]}        # unnamed copy 
+eval {@a}      # unnamed copy 
+
+---------------------------------------------------------------------
+-----------
+use reference to an array as a subscript: 
+
+#!/usr/bin/perl
+use strict ;
+use warnings;
+sub SepPrint::TIEHASH { my $class = shift; bless {sep =>shift},
+$class     }
+sub SepPrint::FETCH   { my $self  = shift; join  $self->{sep}, 
+@{shift()} }
+my (%comma, %colon);
+tie %comma, 'SepPrint', ", ";
+tie %colon, 'SepPrint', ":";
+print "testing $comma{[1, 2, 3]}\n";  # testing 1, 2, 3 
+print "testing $colon{[1, 2, 3]}\n";  # testing 1:2:3
+
+Folks,
+
+Today's issue is about sorting.
+http://perldoc.perl.org/functions/sort.html
+
+string sort:
+@sorted = sort {$a cmp $b} @arr;
+or 
+@sorted = sort @arr;  # if no sorting code is specified - it defaults
+to string sort
+
+Note the use of predefined variables $a and $b. 
+During the sort they are substituted by values of the array to do the
+comparison.
+
+numeric sort
+@sorted = sort {$a <=> $b} @arr;
+
+To reverse the order - jsut switch $a and $b:
+@sorted = sort {$b <=> $a} @arr;
+
+You can sort into array itself:
+@arr = sort @arr;
+
+When you provide the code { ... } - it is effectively a reference to
+a subroutine.
+This subroutine processes 2 predefined variables ($a & $b) and should
+return 1,0,or -1 depending on some rules.
+You can make very complicated rules.
+For example, when sorting email addresses, you can sort first by
+domain, then by name.
+
+To speed up sorting you need to cache intermediate data so that you
+don't have to repeat comparisons.
+This may be done in different ways.
+Also sorting is frequently done in 3 steps:
+   transform original array,  sort, transform back
+For example, Schwartzian Transform:
+my @sorteddata =                           # Schwartzian Transform: 
+  map {$_->[0]}                            # map back 
+  sort { $a->[1] cmp $b->[1] }             # sort by cleanned element 
+  map { m/@([a-zA-Z0-9\-.]*)\b/; [$_, $1]} # map to a list anon.2-
+element arrays 
+  @data; 
+
+The Schwartzian Transform uses caching in anonymous arrays.
+People use other structures (like hashes or strings) for caching.
+Read documentation to module Sort::Maker
+http://search.cpan.org/~uri/Sort-Maker-0.06/Sort/Maker.pm
+This module allows you to compose different types of sorts,
+and to benchmark them to select the right one for you.
+The documentation provides descriptions of those sorts and their
+relative pros/cons.
+
+More tips:
+
+You can "pipe" commands together, for example:
+print reverse sort map {lc} keys %hash; 
+which is equivalent to:
+print(reverse(sort(map({lc},keys(%hash)))));
+
+Note - reverse() can be used to change the order of sorting. But this
+is wrong because this means that you first sort in one order, and
+then spend time reversing it. Better just switch $a and $b in the
+original sort.
+
+You can combine several lists together into one sort:
+sort @guys, @gals, other();
+
+
+Hello,
+
+Sendnig email from Perl - there are many ways of doing this.
+Below are 3 most common ways which I have used myself
+
+# ---------------------------------------------------------------
+# method 1 - sending simple text email piping into sendmail command
+# ---------------------------------------------------------------
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+
+my $sendmail = "/usr/sbin/sendmail -t";
+my $to       = "john.smith\@somedomain.com";
+my $from     = $to;
+my $subject  = "some subject";
+my $content  = "Some text1\nsome text2\netc.\n";
+
+open(my $sm, "|$sendmail") 
+  or die "Cannot open $sendmail: $!";
+print {$sm} "To: $to\n";
+print {$sm} "From: $from\n";
+print {$sm} "Subject: $subject\n\n";
+print {$sm} $content;
+close($sm);
+
+# ---------------------------------------------------------------
+# method 2 - using module Net::SMTP for sending simple text email
+# ---------------------------------------------------------------
+
+use Net::SMTP;
+
+  my $smtp;
+  while ($attempts < 20) {
+    $attempts ++;
+    mylog("Communicating with SMTP server $smtp_server - $attempts
+attempt");
+    $smtp = Net::SMTP->new($smtp_server);
+    last if $smtp;
+    sleep(3);
+  }
+  if (! $smtp) {
+    die "Exiting - Couldn't create a new smtp object : $!";
+  }
+
+  $smtp->mail($email_from);
+  $smtp->to(@emails_to);
+  # $smtp->cc(@emails_cc);
+  $smtp->data();
+  my $tolist = "<" . join(">,<",@emails_to) . ">";
+  mylog("To: $tolist");
+  $smtp->datasend("To: $tolist\n");
+
+  mylog("From: $email_from");
+  $smtp->datasend("From: $email_from\n");
+
+  mylog("Subject: " . $subject);
+  $smtp->datasend("Subject: " . $subject . "\n\n");
+
+  $dm->mylog($message);
+  $smtp->datasend($message);
+
+  $smtp->dataend();
+  $smtp->quit;
+
+# ---------------------------------------------------------------
+# method 3 - using module MIME::Lite for sending emails with
+attachments
+#            (or module MIME::Base64 - see docs for that)
+# ---------------------------------------------------------------
+
+Below is a complete working implementation using MIME::Lite.
+You can use it for sending plain emails without attachments like
+this:
+  $dm->send_email_attach($subject,$part_body, [], $remails);
+
+# ---------------------------------------------------------------
+# send_email_attach()
+# $dm->send_email_attach($subject,$part_body [,$parts_attach
+[,$ref_to_arr_of_emails_to]] )
+#   where 
+#     $part_body = { type => 'text/plain', text => $some_text }; # or
+'text/html' or 'text/rtf'
+#   next 2 parameters are optional
+#     $parts_attach = [ {type => $type1, path => $fname1}, {type =>
+$type2, path => $fname2}, [etc.] ]
+#     $ref_to_arr_of_emails_to - is optional
+#
+# Frequently used MIME types:
+#   text/plain, text/csv, text/html, text/rtf, text/tab-separated-
+values
+#   image/gif, image/jpeg, audio/mpeg (used for mp3)
+#   application/xml, application/msword, application/excel,
+application/zip
+# 
+# In rare cases when you might need some other file type - send it in
+a zip file,
+# or use specific MIME type (search on Google for: mime types)
+# Good link:
+http://www.akadia.com/services/email_attachments_using_perl.html
+# ---------------------------------------------------------------
+sub send_email_attach {
+  my $dm= shift;
+  my $subject   = shift;
+  my $part_body = shift; 
+  my $parts_attach = shift || "";
+  my $remails = shift || []; 
+
+  use MIME::Lite;        # to send emails with attachments -
+send_email_attach()
+  use Net::SMTP;         # to send emails
+
+  if($dm->{do_not_send_email}) {
+    $dm->mylog("Not sending email, because 'do_not_send_email' flag
+is set in the config file");
+    return;
+  }
+
+  my $smtp_server = $dm->{email_smtp_server} || "";
+  if (length($smtp_server) <=0) {
+    $dm->mylog("Can't send email because email_smtp_server is NOT
+specified in the config file");
+    return;
+  }
+
+  if ( scalar(@$remails) <= 0  &&  scalar(@{$dm->{emails}}) >=1 ) {
+    $remails = $dm->{emails};
+  }
+
+  my $email_from = $dm->{email_from}  || "";
+  if (length($email_from) <=0 or scalar(@$remails) <=0) {
+    $dm->mylog("Can't send email because no email info is provided");
+    return;
+  }
+
+  my $emails_to   =  join(",",@$remails);
+
+  $dm->mylog("Sending email from << $email_from >> to << $emails_to
+>> with subject: $subject");
+
+  ### Create the multipart container
+  my $msg = MIME::Lite->new (
+    From => $email_from,
+    To => $emails_to,
+    Subject => $subject,
+    Type =>'multipart/mixed'
+  ) or $dm->myerrexit("Error creating multipart container: $!");
+  
+  ### Add the text message part
+  $msg->attach (
+    Type => $part_body->{type},
+    Data => $part_body->{text}
+  ) or $dm->myerrexit("Error adding the text message part: $!");
+
+  ### Add attachments
+  for my $part (@$parts_attach) {
+    my $file = $part->{path};
+    $msg->attach (
+      Type     => $part->{type},
+      Path     => $file,
+      Filename => $file,  # fname on the receiver's side
+      Disposition => 'attachment'
+    ) or $dm->myerrexit("Error attaching $file: $!");
+  }
+  
+
+  my $attempts = 0;
+  my $success = "";
+  while ($attempts < 20) {
+    $attempts ++;
+    $dm->mylog("Sending email - $attempts" .numsuff($attempts)."
+attempt");
+    $dm->mylog("Setting the email-send method as 'SMTP' via SMTP
+server $smtp_server");
+    MIME::Lite->send('smtp', $smtp_server, Timeout=>60); # sets the
+method of sending
+    # MIME::Lite dies on errors - so we have to trap it with eval
+    eval '$success = $msg->send';
+    if ($@) {
+      $dm->mylog("Error sending email: $@ , will retry in 1 min");
+      $success = "";
+    }
+    last if((defined $success) && $success);
+    sleep(60); # wait 1 min
+  }
+  if (! $success) {
+    die "Exiting - Couldn't send an email";
+  }
+  $dm->mylog("email was sent OK");
+
+}
+Hello,
+
+About downloading files from web pages.
+Here is how simple it is to download html source of a web page:
+   use LWP::Simple;  
+   my $html = get('http://www.someaddress.com');
+
+In real life you need to use proxy server, etc.
+
+    use LWP::UserAgent;
+    my $ua = LWP::UserAgent->new;
+    $ua->proxy(['http', 'ftp'] => ‘http://proxy.mycompany.net:8080’);
+    my $url =  'http://www.somedomain.no/somedir/somefile.tar.gz';
+    # $url = 
+'http://www.somedomain.no/somedir/somescript.cgi?par1=val1’;
+    my $req = HTTP::Request->new(GET => $url);
+    $res = $ua->request($req, "somefile.tar.gz");
+
+   if (! $res->is_success) {
+     print "ok\n";
+   } else {
+     print $res->status_line, "\n";
+   }
+
+=============================================
+
+If you need to download several files from a web page - you can do it
+in several steps:
+Step 1 – get the page (LWP::UserAgent or LWP::Simple) 
+Step 2 - parse its HTML to get a list of files (HTML::Parser,
+HTML::TreeBuilder)
+         Read this good article -
+http://www.perl.com/pub/2006/01/19/analyzing_html.html
+Step 3 – get the files (LWP::UserAgent) 
+
+So beginning of your perl script will probably have:
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Response;
+use HTTP::Request::Common;
+use Regexp::Common qw(URI);
+
+=============================================
+
+I recommend to buy these 2 books (I have both of them).
+  Spidering Hacks – by Kevin Hemenway, Tara Calishain (O’Reilly,
+2003)
+  Perl & LWP – by Sean M. Burke (O’Reilly, 2002)
+
+Also, look at this cook-book page:
+http://search.cpan.org/~gaas/libwww-perl-5.837/lwpcook.pod
+It will give you basic examples, including how to download files –
+and which modules to use.
+
+=============================================
+
+Main work horse module:
+LWP::UserAgent 
+http://search.cpan.org/~gaas/libwww-perl-5.837/lib/LWP/UserAgent.pm
+
+
+But there are many-many modules which can be used
+depending on the task, for example:
+
+LWP::Simple - http://search.cpan.org/~gaas/libwww-perl-
+5.837/lib/LWP/Simple.pm
+LWP::UserAgent - http://search.cpan.org/~gaas/libwww-perl-
+5.837/lib/LWP/UserAgent.pm
+WWW::Mechanize - http://search.cpan.org/dist/WWW-
+Mechanize/lib/WWW/Mechanize.pm
+HTTP::Request
+HTTP::Request::Common
+HTTP::Response
+HTTP::Cookies
+WWW::Search
+HTML::Parser
+HTML::TreeBuilder 
+HTML::TokeParser 
+Template::Extract 
+etc.
+etc.
+
+Note – to find modules on cpan, google them with the word "cpan" 
+and substituting "::" by a dash, for example:
+   cpan http-response
+   cpan lwp-useragent
+
+Folks,
+
+Several easy ways to read the whole text file
+
+my $file = "/some/file";
+
+# --------------------------------------
+# typical way:
+# --------------------------------------
+open(my $fh,"<",$file) or die "Can't open file $file for reading:
+$!";
+while (my $line = <$fh>) {
+  chomp $line;
+  next if $line =~ m/^\s*\#/;  # remove comments
+  $line =~ s/^\s+|\s+$//g;     # trim
+  next if $line eq "";         # remove empty lines
+  push @lines, $line;          # store in an array or process
+}
+close($fh);
+
+# --------------------------------------
+# simple lazy way:
+# --------------------------------------
+open(my $fh,"<",$file) or die "Can't open file $file for reading:
+$!";
+my @lines = <$fh>; # slurp all lines at once
+close($fh);
+
+# --------------------------------------
+# read file in 1 line - very lazy way
+# --------------------------------------
+my $txt = qx{cat $file};
+# or
+my @lines = qx{cat $file};
+chomp @lines;
+
+The diamond operator reads piece of file until it finds value stored
+in $/ (by default it is a new-line symbol).
+If we set $/ = undef, then diamond operator will read until the end
+of the file:
+
+my $txt;
+{ 
+  local $/ = undef;
+  open(my $fh,"<",$file) or die "Can't open file $file for reading:
+$!";
+  $txt = <$fh>;
+} # file will be automatically closed on exiting the block;
+
+Hello,
+
+Today more about handling dates.
+
+built-in function time() - returns time in seconds since 1970 (epoch
+time).
+   http://perldoc.perl.org/functions/time.html
+
+built-in function localtime()
+  http://perldoc.perl.org/functions/localtime.html
+It takes epoch time - and converts it in an array of values for your
+local time settings.
+Or, in scalar context, it returns a string with today's date and time
+- similar to unix's date command.
+
+Similar function is gmtime()
+   http://perldoc.perl.org/functions/gmtime.html
+It takes epoch time - and converts it in an array of values for
+Greenwich time zone
+Or, in scalar context, it returns a string with today's date and time
+- similar to unix's date command.
+
+perl -e 'print gmtime() . $/;'      
+Thu Dec  1 20:44:45 2011
+perl -e 'print localtime() . $/;'        
+Thu Dec  1 15:44:54 2011
+
+There are many modules on CPAN for handling date manipulations.
+My favorite one is Date::Calc
+  http://search.cpan.org/~stbey/Date-Calc-6.3/lib/Date/Calc.pod
+It is light and powerful
+
+Other good module (very flexible and powerful, although quite big) is
+Date::manip
+  http://search.cpan.org/~sbeck/Date-Manip-6.20/lib/Date/Manip.pod
+
+You may also want to look at the standard module Time::Local
+   http://perldoc.perl.org/Time/Local.html
+This module provides functions that are the inverse of built-in perl
+functions localtime() and gmtime().
+
+use Time::Local;
+my $str1 = '2010-12-09T06:27:33';
+my ($year,$mon,$mday,$hour,$min,$sec) = split(/\D/,$str1);
+print $str1,$/;
+my $str2 = localtime(timegm($sec,$min,$hour,$mday,$mon-1,$year));
+print $str2,$/;
+
+Yet another thing – strftime() function in POSIX module:
+   http://perldoc.perl.org/POSIX.html
+It convert date and time information to string. Used something like
+this:
+     $str = POSIX::strftime( "%A, %B %d, %Y", 0, 0, 0, 12, 11, 95, 2
+);    
+    print "$str\n";
+
+Here are simple examples of using localtime from one of my earlier
+emails.
+I decided to reproduce them again because I do similar things often:
+
+# --------------------------------------------------------------
+# datetime4fname() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a file name YYMMDD_HHMMSS, ex.
+050512_150645
+# --------------------------------------------------------------
+sub datetime4fname {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) =
+localtime($mytime);
+  return sprintf("%02d%02d%02d_%02d%02d%02d",$year-100,$mon+1,$mday,
+$hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime4log() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a log string, ex. 05/09/15_15:06:45
+# --------------------------------------------------------------
+sub datetime4log {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) =
+localtime($mytime);
+  return sprintf("%02d/%02d/%02d_%02d:%02d:%02d",$mon+1,$mday,$year-
+100, $hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime_wday4text() - accepts (optionally) time in seconds since
+1970
+#   returns date, day_of_week, and time in easy-readable format:
+12/31/05 - Mon - 23:59
+# --------------------------------------------------------------
+sub datetime_wday4text {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) =
+localtime($mytime);
+       my @wday = qw(Sun Mon Tue Wed Thu Fri Sat);
+       my $wd = $wday[$wday];
+  return sprintf("%02d/%02d/%02d - %s -
+%02dh:%02dm",$mon+1,$mday,$year-100,$wd, $hour,$min);
+}
+
+Hello,
+
+Today's email is about processing command line options.
+
+Perl puts command line parameters into array @ARGV
+You can parse it manually, or you can do it using a module like
+Getopt::Long
+http://perldoc.perl.org/Getopt/Long.html
+
+For example, if I want to parse a command like this:
+
+perl  myscript.pl   -l 24   -m mode   -v    -col c1   --col c2  
+input_file
+
+I can do this:
+
+use Getopt::Long;
+my ($opt_help, $opt_length, $opt_mode, $opt_verbose, @opt_cols,
+$fname);
+
+GetOptions (
+  "l|length=i"      => \$opt_length,    # numeric
+  "m|mode=s"        => \$opt_mode,      # get value into a string
+  "v|verbose"       => \$opt_verbose    # flag
+  "c|col=s"         => \@opt_cols,      # get several values into an
+array
+  "help|h|?"        => \$opt_help,      # flag to show help and exit
+);
+
+# While extracting options from @ARGV, Getopt::Long removes them from
+the array @ARGV.
+# After all options are extracted, @ARGV will contain only remaining
+non-option arguments.
+# In our case it is the name of the input file input_file:
+
+$fname = @ARGV[0]; 
+
+if ($opt_help) {
+  show_help();
+  exit;
+}
+Hello,
+
+Today's topic - global variables and typeglobs .
+
+Perl has several types of variables: 
+   global ("package") variables
+   my() variables
+   local() variables
+
+Today we will discuss global variables.
+Global variables are created using this syntax:
+      our($frobbed, @munge, %seen);        # this is new way
+      use vars qw($frobbed @munge %seen);  # this works, but it is old style
+
+Global variables are stored in current package 
+which is "main" by default, unless you change it using command
+"package ...;".
+
+Package variables can be accessed from anywhere using fully-qualified
+names like this:
+   $main::var1          # scalar
+   @Package1::var2      # array in Package1 
+   %Package2::var3      # hash in Package2
+
+Each package has its own structure (name table) to keep track of
+names.
+Internally it is implemented similar to a hash.
+For each name a hash element is created, called "typeglob".
+Typeglob has 7 children for different types - a scalar variable,
+array, hash, subroutine, file handle, package, etc.
+
+You can access a glob as a whole using '*' prefix, and you can alias
+one typeglobe to another
+      *bar = *foo;  # typeglob assignment
+
+This is similar to making a link in unix. After that
+      $foo = 2;
+      print $bar;  # will print 2, because bar is aliased to foo
+
+You can do many more things with typeglobs, although it is rarely
+needed in everyday practice.
+Read more here:
+ 
+http://www252.pair.com/comdog/mastering_perl/Chapters/08.symbol_table
+s.html
+
+Hello,
+
+Today's topic - XML
+
+You can easily write your own XML parser for simple XML messages
+using perl regular expressions.
+But it is not appropriate for "heavy lifting".
+Fortunately Perl has very good tools for XML processing which are
+fast and flexible.
+They based on solid C-libraries - and combine speed of "C" and
+flexibility of Perl.
+
+Online tutorials and resources: 
+  http://perl-xml.sourceforge.net/faq/
+
+Good book: 
+  Perl and XML by Erik T. Ray  & Jason McIntosh - O'REILLY, 2002
+
+Online FAQs:
+  http://perl-xml.sourceforge.net/faq/
+
+There are many CPAN modules, for example:
+XML::Parser
+XML::LibXML
+XML::XPath
+XML::DOM
+XML::Simple
+XML::Twig
+Win32::OLE and MSXML.DLL
+XML::PYX
+XML::SAX
+XML::SAX::Expat
+XML::SAX::ExpatXS
+XML::SAX::Writer
+XML::SAX::Machines
+XML::XPathScript
+etc.
+etc.
+
+For many simple cases all you need is XML::Simple
+http://search.cpan.org/~grantm/XML-Simple-2.18/lib/XML/Simple.pm
+
+    use XML::Simple;
+    my $xs = XML::Simple->new(options);
+    my $ref = XMLin('/some/file.xml');
+    my $xml = $xs->XMLout($hashref);
+
+The functions may be used with different options - see documentation.
+
+You can grep for "XML" and "use" to see which XML modules are used in
+our existing code.
+For example:
+/a/someuser/bin/download_treasury_data.pl:use XML::XPath;
+/a/someuser/bin/formatxml.pl:use XML::Simple;
+/a/someuser/bin/get_single_rvs_series.pl:use XML::Simple;
+/a/someuser/mbs/automated_index_fetch/download_cmt_indexes.pl:use
+XML::XPath;
+/a/someuser/mbs/markit/bin/parse_data.pl:use XML::XPath;
+/a/someuser/mbs/markit/bin/parse_data.pl:use XML::XPath::XMLParser;
+/a/someuser/mbs/rvs/regression/testRvs.pl:use XML::DOM;
+/a/someuser/mbs/trust_rpt/bin/trust_iopo_marketing_sheet.pl:use
+XML::Dumper;
+/a/someuser/mbs/trust_rpt/bin/trust_iopo_marketing_sheet_new.pl:use
+XML::Dumper;
+
+Perl also has full support for SOAP - just google it.
+For example:
+  http://search.cpan.org/~kbrown/SOAP-0.28/lib/SOAP.pm
+
+Hello,
+
+Today's topic - JSON. JSON is a very good way to "stringify" data.
+Much shorter and clearer than XML.
+
+JSON = JavaScript Object Notation - a better (than exml) way to
+encode data
+  http://en.wikipedia.org/wiki/JSON
+
+Perl has excellent JSON encode/decoder - JSON.pm
+which has simple functions to encode to/from json:
+
+use JSON;
+$json_text = to_json($perl_scalar)
+$perl_scalar = from_json($json_text)
+
+The functions accept many options.
+See documentation here:
+  http://search.cpan.org/~makamaka/JSON-2.53/lib/JSON.pm
+
+
+For example, to save space and make json records shorter:
+
+my $mysession_json = to_json($mysession, {space_after => 1});
+
+Here is how you can make a generic function:
+
+# ---------------------------------------------------------------
+# my_to_json($str_or_obj)
+# ---------------------------------------------------------------
+sub my_to_json {
+  my $str_or_obj = shift;
+  if (ref $str_or_obj) {
+    $str_or_obj = to_json($str_or_obj, {space_after => 1});
+  }
+  return $str_or_obj;
+}
+
+Hello,
+
+Today's topic - accessing databases from perl.
+And specifically - Sybase and MS SQL Server - because this is
+something used in our code.
+
+DBI.pm - DataBase Interface - generic high-level routines
+  http://search.cpan.org/~timb/DBI-1.616/DBI.pm
+
+There is an excellent book explaining it:
+  http://oreilly.com/catalog/perldbi/chapter/ch04.html
+
+Here is a typical example of usage (in this example we have Oracle,
+but the syntax is (almost) the same for all databases):
+========================
+use DBI;
+my $dbh = DBI->connect('DBI:Oracle:payroll')
+  or die "Couldn't connect to database: " . DBI->errstr;
+my $sth = $dbh->prepare('SELECT * FROM people WHERE lastname = ?')
+  or die "Couldn't prepare statement: " . $dbh->errstr;
+
+print "Enter name> ";
+while ($lastname = <>) {               # Read input from the user
+  my @data;
+  chomp $lastname;
+  $sth->execute($lastname)             # Execute the query
+    or die "Couldn't execute statement: " . $sth->errstr;
+
+  # Read the matching records and print them out          
+  while (@data = $sth->fetchrow_array()) {
+    my $firstname = $data[1];
+    my $id = $data[2];
+    print "\t$id: $firstname $lastname\n";
+  }
+
+  if ($sth->rows == 0) {
+    print "No names matched `$lastname'.\n\n";
+  }
+
+  $sth->finish;
+  print "\n";
+  print "Enter name> ";
+}
+$dbh->disconnect;
+========================
+
+To work with a specific database, a specific Database Driver (DBD)
+module should be installed,
+for example:
+
+DBD::Sybase.pm
+  http://search.cpan.org/~mewp/DBD-Sybase-1.14/Sybase.pm
+DBD::Oracle.pm
+  http://search.cpan.org/dist/DBD-Oracle/
+DBD::mysql 
+  http://search.cpan.org/~capttofu/DBD-mysql-4.020/lib/DBD/mysql.pm
+DBD::ODBC 
+  http://search.cpan.org/~jurl/DBD-ODBC-1.13/ODBC.pm
+
+etc.
+etc.
+
+When you connect to a specific server, perl determines the kind of
+database from connection string - and loads corresponding DBD module.
+
+Our code is mostly old, written well before DBI module was created.
+Technologies used in our code:
+
+(1) BSIO.pm module, which is a wrapper around BearStearns InputOutput
+C-library (BSIO) used by C/C++ applications.  This library is build
+using libsybdb (library provided by Sybase) 
+    (actually using Free TDS: -lFreeTDS_sybdb -lFreeTDS_ct)
+
+(2) There are also scripts using sybperl directly. Namely
+Sybase::DBlib.
+  Sybperl is the generic name for the Sybase Open Client extensions
+to Perl.
+  Sybase::DBlib - library available before mid-1990s,
+  Sybase::CTlib - newer library available since ~1996 
+  Michael Peppler on his site explains the advantages of using
+Sybase::CTlib
+  http://www.peppler.org/sybperl/article.html
+
+  You can see documentaion on Michael Peppler's site or on CPAN  
+  http://search.cpan.org/~mewp/sybperl-2.19/pod/sybperl.pod
+
+   use Sybase::DBlib;     # Sybase DB-Library API
+     http://search.cpan.org/~mewp/sybperl-2.19/DBlib/DBlib.pm
+   use Sybase::CTlib;     # Sybase CT-Library (aka the Client
+Library) API
+     http://search.cpan.org/~mewp/sybperl-2.19/CTlib/CTlib.pm
+   use Sybase::Sybperl;   # Sybase::Sybperl is a backwards
+compatibility module (implemented on top of Sybase::DBlib)
+     to enable scripts written for sybperl 1.0xx to run with Perl 5.
+     http://search.cpan.org/~mewp/sybperl-2.19/Sybperl/Sybperl.pm
+
+Here is a typical example of code using Sybase::DBlib :
+
+    use Sybase::DBlib;
+
+    $dbh = Sybase::DBlib->new('user', 'pwd', 'server');
+    $dbh->dbcmd("select * from master..sysprocesses");
+    $dbh->dbsqlexec;
+    while($dbh->dbresults != NO_MORE_RESULTS) {
+        while(@data = $dbh->dbnextrow) {
+            print "@data\n";
+        }
+    }
+Hello,
+
+Today's topic - getting directory listing.
+
+my $dir = "/some/dir";
+opendir my $dh, $dir 
+  or die "Can't open dir $dir : $!";
+while (my $obj = readdir $dh) {
+  next if $obj eq '.' || $obj eq '..';
+  if (-d $obj) {
+    # directory processing
+  } elsif (-f $obj) {
+    # file processing
+  } else {
+    # some other processing
+  }
+}
+close($dh);
+
+
+Another way is to use glob() function
+http://perldoc.perl.org/functions/glob.html
+
+my @files = glob("*.c *.h");
+my @everything = glob(".* *");
+
+Note: perl can use similar wildcard expressions in the diamond
+operator.
+In this case glob() function is actually called.
+
+while (<*.c>) {
+  chmod 0644, $_;
+}
+
+Yet another way (not recommended):
+  chomp(@files=qx{/bin/ls});
+
+Hello,
+
+Today's topic - going through a directory tree recursively to
+find/process certain files/links/directories.
+
+As usual, there are more than one way of doing this.
+Below I list 3 examples:
+  - invoking external unix command "find"
+  - using module Find::File
+  - writing your own recursive code in perl
+
+============================================================
+(1) use external command to generate a list of files to process:
+
+my $cmd = qq{ find . -follow -maxdepth 8 }
+            . qq{ \\( -iname '*.cgi' -o -iname '*.pl' -o -iname
+'*.class' \\) -print }
+            . qq{ 2>/dev/null};
+
+chomp (my @list = qx{$cmd});
+map { print $_,$/; } @list;
+
+============================================================
+(2) use module Find::File
+http://perldoc.perl.org/File/Find.html
+
+use File::Find;
+find(\&wanted, @directories_to_search);
+sub wanted { ... }
+============================================================
+(3) write your own recursive walk_tree code.
+Here is a simple example just to give you an idea.
+
+my $filetype = '(txt|html?|js|css|cgi|pl|dat|java)';
+chomp (my $cd = qx{pwd});
+
+&walk_tree($cd, \&do_file, \&do_dir);
+
+# ------------------------------------------------
+# do_file()
+# ------------------------------------------------
+sub do_file {
+  my $file = shift;
+  if ($filename !~ /\.($filetype)$/i) { return; }
+  my $ss;
+  print "$file\n";  
+  { local $/=undef; open (IN, $file); $ss=<IN>; close(IN); }
+  open(OUT,">$file");
+  print OUT "$ss \n";
+  close(OUT);
+}
+
+# ------------------------------------------------
+# do_dir()
+# ------------------------------------------------
+sub do_dir {
+  print $_[0], "\n";
+}
+
+# ------------------------------------------------
+# walk_tree()
+# ------------------------------------------------
+sub walk_tree {
+  my ($dir, $filefunc, $dirfunc) = @_;
+  if (-f $dir) { $filefunc->($dir) }
+  else {
+    opendir my $dh, $dir or return;
+    $dirfunc->($dir);
+    while (my $file = readdir $dh) {
+      next if $file eq '.' || $file eq '..';
+      walk_tree("$dir/$file", $filefunc, $dirfunc); 
+    }
+  }
+}
+
+Note - the code above doesn't change the directory.
+We simply open paths which are getting longer and longer as we go
+deeper into the tree.
+This works fine in Unix, but can break on Windows becase Windows
+can't handle very long paths.
+Solution for windows is to change directory to step into a
+subdirectory to process it - and then step out ( cd .. ) at the end.
+
+      chdir $entry or die "can't chdir into dir $absdir/$entry: $!";
+      walk_tree($newdir);
+      chdir ".."  or die "can't chdir back into dir $absdir: $!";
+
+So the walk_tree() may look like this:
+
+
+# ---------------------------------------------------------------
+# walk_tree()
+# ---------------------------------------------------------------
+sub walk_tree {
+  my $absdir =  shift;
+  opendir my $dh, '.' or die "can't open dir $absdir: $!";
+  my @entries = readdir $dh;
+  close($dh);
+
+  for my $entry (@entries) {
+    next if $entry eq '.' || $entry eq '..';
+    if (-f $entry) {
+      # process file
+    } elsif (-d $entry) {
+      my $newdir = "$absdir/$entry";
+      chdir $entry or die "can't chdir into dir $absdir/$entry: $!";
+      walk_tree($newdir);
+      chdir ".."  or die "can't chdir back into dir $absdir: $!";
+    }
+  }
+}
+Hello,
+
+Frequently you need to know if a particular perl module is installed,
+and where is it.
+
+==================================================
+To check if a module is installed, run this command:
+    perl -e "use Somemodule;'
+If module can't be found - it will give you error message.
+==================================================
+To see where (in which directories) the standard modules are
+installed, run this command:
+  perl -V
+(important - it should be a capital "V")
+
+or run a simple one-liner to print the contents of @INC (include
+directories):
+  perl -e 'map {print $_,$/;} @INC;'
+
+==================================================
+To get a list of all installed modules:
+
+perl -MFile::Find=find -MFile::Spec::Functions -Tlw \
+  -e 'find { wanted => sub { print canonpath $_ if /\.pm\z/ }, 
+  no_chdir => 1 }, @INC'
+==================================================
+
+Folks,
+Couple days ago I emailed you commands to print out the list of
+installed modules.
+Today I provide implementation which is specific for our environment.
+
+For myself I have created 2 aliases:
+
+alias perl5mod='perl5   /a/e139737/bin/perl5mod.pl'
+alias perlmod='perl   /a/e139737/bin/perlmod.pl'
+
+Corresponding scripts:
+/a/e139737/bin/perlmod.pl
+# ------------------------------------------------
+#!/usr/bin/perl
+# print lsit of modules
+use strict;
+use File::Find;
+my @mods;
+sub process {
+  if($File::Find::name =~ /\.pm$/) {push @mods, $File::Find::name};
+}
+my @arr = map {;$_ .'/';} grep {$_ ne '.'} @INC; # remove current
+dir, add '/'
+find({wanted=>\&process,follow=>0},@arr);
+map {;print $_,$/;} sort {lc($a) cmp lc($b)} @mods;
+# ------------------------------------------------
+for old perl we need to add 2 directories to @INC:
+   use lib '/a/someuser/bin/modules', '/usr/local/db/vers/perl_lib';
+Also we need to follow links, so the code becomes:
+/a/e139737/bin/perl5mod.pl
+# ------------------------------------------------
+#!/usr/local/bin/perl5
+# create list of modules
+use strict;
+use lib '/a/someuser/bin/modules', '/usr/local/db/vers/perl_lib';
+use File::Find;
+my @mods;
+sub process {
+  if($File::Find::name =~ /\.pm$/) {push @mods, $File::Find::name};
+}
+my @arr = map {;$_ .'/';} grep {$_ ne '.'} @INC; # remove current dir, add '/'
+find({wanted=>\&process,follow=>1},@arr);
+map {;print $_,$/;} sort {lc($a) cmp lc($b)} @mods;
+# ------------------------------------------------
+Hello,
+
+Perl is a dynamic language. This means that it allows to 
+dynamically execute a string containing perl code.
+The program effectively can rewrite itself at run time.
+This is done with the function eval().
+http://perldoc.perl.org/functions/eval.html
+
+There are 2 forms of eval:
+   eval $str;     # perl compiler is invoked at run time to parse
+$str - and then execute it
+   eval {$str};   # contents of the block is parsed only once when the surrounding code is parsed
+
+If there is a syntax error or runtime error, or a die statement is executed inside eval,
+eval returns undef in scalar context or an empty list or a list
+containing a single undefined value and $@ is set to the error message.
+
+The block form of eval() is usually used to catch run-time errors
+similar to try/catch in Java
+http://www.perlmonks.org/?node_id=384038
+
+eval {
+  # some code;
+}
+if ($@) {
+  # process error;
+}
+
+Note: in both scalar and block forms, eval returns the value of the
+last expression evaluated
+inside the evaluated mini-program; a return statement may be also
+used, just as with subroutines.
+
+Note: it is possible to have nested eval. 
+If you use die without argument - then the error messages get
+appended together.
+Try this:
+eval {
+  eval {
+    eval {
+      print"Hello\n";
+      die "First die";
+    }
+    if($@) { # 1st catch
+      # do some processing; 
+      die;
+    }
+  }
+  if($@) { # 2nd catch
+    # do some processing;
+    die;
+  }
+}
+if($@) { # 3rd catch
+  # do some processing;
+  die;
+}
+
+Here is the output:
+Hello
+First die at ./test.pl line 10.
+        ...propagated at ./test.pl line 14.
+        ...propagated at ./test.pl line 19.
+        ...propagated at ./test.pl line 24.
+
+
+If you need to include code from a file - this may be done by
+functions do(), require, or use().
+
+http://perldoc.perl.org/functions/do.html
+http://perldoc.perl.org/functions/require.html
+http://perldoc.perl.org/functions/use.html
+
+do($file_name) is the simplest - it just loads (reads) the file - and
+eval-s its contents.
+require($file_name) keeps track of loaded files to avoid loading the
+same code more than once.
+use(Module_name) loads perl modules (with extension .pm) at compile
+time
+  (as opposed to eval, do, require, whichall work at run time).
+
+Hello,
+
+Today's topic is running external commands from perl.
+There are several ways of doing this:
+  - backtics: `$cmd`  or qx{$cmd}
+  - system($cmd)
+  - exec($cmd) - this never returns back to your code
+  - open(FH, '|$cmd') - pipe from perl into an external $cmd
+  - open(FH, '$cmd|') - pipe from external $cmd back into perl
+
+Below are several simple examples:
+
+============================================
+backticks - work like in shell:
+
+   my $yyyymmdd  = `date +'%Y%m%d'`;
+
+For better visibility you can use qx{} syntax:
+http://perldoc.perl.org/perlop.html#Quote-Like-Operators
+
+   my $yyyymmdd  = qx{date +'%Y%m%d'};
+
+Note - inside the backtics of qx() the string is treated as between
+double-quotes.
+So this makes sense:
+
+my $file = 'somefile';
+my @lines = qx{cat $file};  # returns array in list context
+
+The backticks operator spawns external shell /bin/sh to execute the
+command.
+If the command exits with error, the code is set in $? in shell - and
+passed into $? inside perl.
+So you can do this:
+
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+
+my $output = qx{/bin/false};  # command 'false' always exists with
+error
+if($?) {
+  my $code = $? >> 8;   # the actual error code is in the upper byte,
+so we shift
+  print"error code = $code\n";
+} else {
+  print"not set\n";
+}
+
+============================================
+system() 
+http://perldoc.perl.org/functions/system.html
+
+accepts a command (or a command and arguments)
+returns zero on success, some code if problem.
+You can also inspect $? (same as with backticks).
+Note: the output is not returned. You can use qx{} or pipe for that.
+
+system(my command);
+if ($? == -1) {
+  print "failed to execute: $!\n";
+} elsif ($? & 127) {
+  printf "child died with signal %d, %s coredump\n",
+    ($? & 127),  ($? & 128) ? 'with' : 'without';7.
+} else {
+  printf "child exited with value %d\n", $? >> 8;
+}
+
+============================================
+pipe-from-perl-into-command:
+
+  open(OUTPUT, '|sort >foo'); # pipe to sort
+  print OUTPUT stuff_to_sort;
+  close OUTPUT; # wait for sort to finish
+  open(INPUT, 'foo'); # open file to get sorted results
+
+another example:
+
+  open(SENDMAIL, "|/usr/sbin/sendmail -t") or die "Cannot open
+sendmail: $!";
+  print SENDMAIL "Reply-to: me\@awesome.org\n";
+  print SENDMAIL "Subject: hello\n";
+  print SENDMAIL "To: you\@awesome.org\n";
+  print SENDMAIL "Content-type: text/plain\n\n";
+  print SENDMAIL qq{ text1\ntext2\ntext3\n};
+  close(SENDMAIL);
+
+============================================
+pipe-from-command-into-perl:
+
+  my $cmd = '/bin/cat test.pl';
+  my $pid = open(my $mypipe, $cmd . ' 2>&1 |');
+  if (! $pid) {
+    print "fork failed\n";
+    exit;
+  }
+  print "fork succeeded\n";
+  while (defined(my $readline = <$mypipe>)) {
+    print $readline;
+  }
+  close $mypipe;
+============================================
+
+Hello,
+
+Today's topic is running external commands with a timeout.
+See implementation for perl version 5.005_04 here:
+/a/someuser/bin/modules/RunWithTimeout.pm
+
+Here is the main subroutine:
+
+# --------------------------------------------------------------
+# run_cmd($cmd, $params) - returns 1 on success, 0 (zero) on error
+# Example:
+#   if (! run_cmd('ls',{timeout=>2})) { process error here }
+#   $params is a ref to a hash with fields: 
+#     on input : timeout
+#     on output: timeout, runtime, output, err_str
+# Special care is used to assure that all child processes are killed
+after timeout or fatal error.
+# --------------------------------------------------------------
+sub run_cmd {
+  my $cmd = shift; # cmd line
+  my $ret = shift; # ref to hash
+  my $timeout = $ret->{timeout} || 0;
+  $ret->{output}  = "";
+  $ret->{err_str} = "";
+  my $start_time  = time();
+  say "SYSTEM: " . $cmd;
+  my $time_max = ($timeout) ? $timeout
+                            : 3600*24*15;     # nothing runs 15 days,
+we reboot every 7 days
+
+  # we set timeout via SIGALARM causing dying inside eval{}
+  # this approach allows to handle hanging system calls, etc.
+
+  eval {
+    local $SIG{ALRM} = sub { die "timeout\n"; };
+    alarm($time_max); # set alarm
+
+    my $pid = open(RUNCMD, $cmd . ' 2>&1 |');
+    if (! $pid) {
+      say("SYSTEM failed: $!");
+      $ret->{err_num} = 0+$!;
+      $ret->{err_str} = "".$!;
+      return undef;
+    }
+
+    # start reading filehandle until it is closed (by itself - or
+because of timeout)
+    while (defined(my $readline = <RUNCMD>)) {
+      print $readline;
+      $ret->{output} .= $readline;
+    }
+    close(RUNCMD);
+    alarm(0); # turn off alarm
+  };  # end of eval block 
+
+  if($@) {   # timeout or other error
+    say "Error - " . $@;
+    $ret->{err_str} = $@;
+    clean_children();
+  }
+
+  $ret->{runtime} = time()-$start_time; # in seconds
+  return ($ret->{err_str})? 0 : 1;
+
+}
+
+Note: the sub above calls procedure clean_children().
+Explaining how it works goes way beyond the scope of this email.
+See actual code here:
+  /a/someuser/bin/modules/RunWithTimeout.pm
+Here are the highlights:
+
+use POSIX ":sys_wait_h";          # this is for waitpid($pid,
+WNOHANG)
+$SIG{TERM} = 'IGNORE';            # not to kill myself
+kill(-15,0);                      # sending TERM to group under $$
+$ret = waitpid(-1, WNOHANG);      # remove all my zombies 
+$ret = waitpid($pid, WNOHANG);    # checks the status of process $pid
+kill("KILL", $pid);
+
+
+Hello,
+
+Perl allows to include other languages right inside perl code using
+module Inline.pm
+for example, you can include C/C++ or java code.
+http://search.cpan.org/~ingy/Inline/Inline.pod
+
+Perl compiles inlined code on first run.
+Next time perl invoked - it will not need to recompile the library
+(unless inlined code has changed).
+Here is a simple example of usage:
+
+use Inline C;
+
+print "9 + 16 = ", add(9, 16), "\n";
+print "9 - 16 = ", subtract(9, 16), "\n";
+
+__END__
+__C__
+int add(int x, int y) {
+  return x + y;
+}
+
+int subtract(int x, int y) {
+  return x - y;
+}
+
+
+The older ways of wrapping C-code into perl are XS and SWIG
+http://perldoc.perl.org/perlxs.html
+http://www.swig.org/papers/Perl98/swigperl.htm
+
+Hello,
+
+Today short email - how to becnhmark your programs.
+It is easy with Benchmark module:
+http://perldoc.perl.org/Benchmark.html
+
+Here is a small example:
+
+use Benchmark qw(:all);
+timethis ($count, "code");
+
+# ... or use subroutine references
+timethese($count, {
+  'Name1' => sub { ...code1... },
+  'Name2' => sub { ...code2... },
+});
+Hello,
+
+Today's topic - CGI (Common Gateway Interface).
+CGI scripts were widely used in 1990s to create web applications
+(before java and Microsoft caught up).
+Today CGI is still a very good way to go.
+Over the years many tools/modules were created to make the task easy
+and pleasant.
+
+How things work:
+A browser sends a request to web server to invoke a perl cgi script
+on the server.
+The scripts starts, does some work (for example, retrieves data from
+files or databases, 
+does some calculations), and then prints data back to the browser, -
+and exists.
+ 
+Example: Simple CGI script to print ENV variables to the browser:
+
+#!/usr/local/bin/perl -wT 
+$|++; 
+print "Content-type: text/html\n\n"; 
+print "<html><head><title>ENV</title></head><body>\n"; 
+print "<h3>Table on ENV variables and their values</h3>\n<table>\n"; 
+for my $key (sort keys %ENV) { 
+    print "<tr><td>$key</td><td>$ENV{$key}</td></tr>\n"; 
+} 
+print "</table></body></html>\n";
+
+Browser request can contain parameters (for example, information
+entered into a form).
+There is a module CGI.pm which helps to parse HTTP request to extract
+parameters.
+It also helps to format output data, reduce amount of necessary
+typing, adn does many other useful things.
+I always use this module.
+GCI.pm is a big module which started a whole family of modules.
+http://search.cpan.org/~lds/CGI.pm-3.43/CGI.pm
+http://stein.cshl.org/~lstein/
+http://www.wiley.com/legacy/compbooks/stein/
+Book - OFFICIAL GUIDE TO PROGRAMMING WITH CGI.PM - by Lincoln D.
+Stein
+
+Example:
+
+#!/usr/local/bin/perl -wT 
+use strict; 
+use CGI; 
+my $q = new CGI; 
+print $q->header("text/plain"); 
+my ($name, $value); 
+for $name ($q->param) { 
+  print "$name:\n"; 
+  for $value ($q->param($name) ) { 
+    print "$value:\n"; 
+  } 
+}
+
+Note - there are 4 ways to use param() function: 
+$scalar  =   $q->param('name');  # returns the value 
+@array   =   $q->param('name');  # returns array of values for this
+name 
+$scalar  =   $q->param( );  # returns the number of all named form
+elements 
+@array   =   $q->param( );  # returns an array of names of all form
+elements
+
+There are many other useful modules:
+HTML::Template - allows you to separate page layout design into a
+separate file (template).
+  http://search.cpan.org/~wonko/HTML-Template-
+2.10/lib/HTML/Template.pm
+or faster version written in C:
+  http://search.cpan.org/~viy/HTML-Template-Pro-
+0.9508/lib/HTML/Template/Pro.pm
+ 
+CGI::Application - excellent module to organize multi-page web
+application.
+  http://search.cpan.org/~markstos/CGI-Application-
+4.50/lib/CGI/Application.pm
+  http://www.selectorweb.com/perl_cgi_appl_module.html
+
+CGI::Carp
+CGI::Debug
+etc.
+
+Note - every time CGi script is invoked, there is a delay (to load
+perl and to start the script).
+For fast-performing web sites you can use mod_perl to keep compiled
+scripts in the memory and reuse them.
+(mod_perl also helps to keep database connections open between
+requests).
+http://en.wikipedia.org/wiki/Mod_perl
+
+Note:
+In one of the previous issues of this subscription we have discussed
+how to make a web spider to download information from the web. This
+is not CGI, but as it is web related, I think it is a good place to
+remind about some modules related to this task:
+LWP::Simple
+LWP::UserAgent
+HTTP::Request
+HTTP::Response
+HTTP::Request::Common
+Regexp::Common qw(URI)
+WWW::Mechanize
+HTTP::Cookies
+WWW::Search
+HTML::Parser
+HTML::TreeBuilder
+HTML::TokeParser
+Template::Extract
+
+Hello,
+
+Today's topic - reading and writing to excel files.
+http://search.cpan.org/dist/Spreadsheet-ParseExcel/
+http://search.cpan.org/dist/Spreadsheet-WriteExcel/
+
+http://search.cpan.org/~jmcnamara/Spreadsheet-ParseExcel-
+0.59/lib/Spreadsheet/ParseExcel.pm
+http://search.cpan.org/~jmcnamara/Spreadsheet-WriteExcel-
+2.37/lib/Spreadsheet/WriteExcel.pm
+
+use Spreadsheet::ParseExcel; # write Excel file
+use Spreadsheet::WriteExcel; # write to Excel file
+
+Below I am including a couple of examples extracted and simplified
+from:
+   /a/someuser/bin/jobdocs.pl
+Note - these examples don't work - they are for illustration purpose
+only to show how the code may look.
+
+sub read_xls2003_file {
+  my $parser = new Spreadsheet::ParseExcel;
+  my $workbook = $parser->Parse($myfile) or die "Can't parse file
+$myfile";
+  my $worksheet = $workbook->{Worksheet}[0];
+  my $max_row_index = $worksheet->RowRange();
+  my $max_col_index = $worksheet->ColRange();
+  for my $row (0..$max_row_index) {
+    for my $col ( 0..$max_col_index ) {
+      my $cell = $worksheet->{Cells}[$row][$col];
+      my $val = $cell->Value();
+      ...
+    }
+  }
+}
+
+
+sub write_to_excel {
+  my $fname_excel = $myfile;
+  my $fname_tmp = "$fname_excel.$$";
+  say "creating excel file $fname_excel";
+  my $workbook  = Spreadsheet::WriteExcel->new($fname_tmp);
+  my $format = {};
+  $format->{header} = $workbook->add_format();
+  $format->{header}->set_bold();
+  $format->{header}->set_align("top");
+  $format->{header}->set_border(1);
+  $format->{header}->set_color("brown");
+  $format->{header}->set_bg_color("yellow");
+
+  $format->{data} = $workbook->add_format();
+  $format->{data}->set_text_wrap();
+  $format->{data}->set_align("top");
+    
+  $worksheet = $workbook->addworksheet("some name");
+  # add headers
+  my $col = 0;
+  my $row = 0;
+  for my $header (@myheaders) {
+    my $width = $headers_widths{$header} || 20;
+    $width = ($width <= 10)? 15 : int($width*1.2); # increase a bit
+    $worksheet->set_column($col,$col, $width);
+    $worksheet->write(0,$col, $header, $format->{header});
+    $col++;
+  }
+  
+  # add rows
+  for my $job (sort keys %$jobs) {
+    $row ++;
+    for $col (0..@standard_fields-2) {
+      my $content = $jobdocs_fields[$col][1];
+      if ($content =~ m/\n/) { 
+        my @lines = grep {; $_ !~ /^###/ && $_ !~ /^\s*#\s*\-\-\-/ &&
+$_ !~ /^#\s*OWNER/;} split(/\n/,$content);
+        $content = join("\n",@lines);
+      }
+      $worksheet->write($row, $col, $content, $format->{data});
+    }
+  }
+  $workbook->close();
+}
+
+Hello,
+
+This is the last "perl of the day" email.
+In January I will start "python of the day".
+
+The topic of this email - a simple way to create config files in perl
+syntax.
+Benefits:
+  - you can check syntax of the config file using perl itself.
+  - you can parse config file using perl itself
+  - infinitely flexible format
+
+Here is how I do it.
+
+First, I create a text file (usually with extension ".cfg").
+This config file will have some perl code defining a subroutine which
+returns a reference to a hash structure.
+
+sub get_myconfig {
+  my $myconfig = {
+    param1 => ...,
+    param2 => ...,
+    ...
+  };
+  return $myconfig;
+}
+1;
+
+Then from the main program I load the config file as following:
+
+require $cfg_file;
+my $myconfig = get_myconfig();
+
+my $var1 = $myconfig->{param1};
+# etc.
+
+Note - there are many other formats of config files you can use.
+For example, you can use config files in XML or JSON format.
+Or use format similar to Apache server config file, etc.
+There are perl modules to read many existing 3rd party config files
+(like, for example nagios plugin .ini style config files, mysql
+config files, etc.)
+There are modules supporting multiple files, config files including
+other config files,
+object-oriented config files, etc. etc.
+Just search CPAN forword "config" - and see many pages listing
+multiple modules.
+
+Config::JSON
+Config::ApacheFormat
+Config::Context::XMLSimple
+Config::Any::XML 
+Log::Log4perl - Log4j implementation for Perl
+Log::Log4perl::Config::DOMConfigurator - reads XML config files
+etc.
+etc.
+etc.
+
+
+
+Hello
+
+Some interesting perl idioms:
+  https://github.com/book/perlsecret/blob/master/perlsecret.pod
+
+For example, 
+
+# convert string to a number
+0+ $string
+
+@{[  ]} - performs list interpolation inside a double-quoted string
+
+~~  is equivalent to scalar()
+
+!! - convert to boolean value
+
+~~<> - same as scalar(<STDIN>)
+
+=()=  can be used count or to select values into a list:
+
+# incerting matches into @c
+$n =(@c)= "abababab" =~ /a/g;   #  @c now contains ('a','a','a','a')
+
+# counting
+$n =()= /word1|word2|word3/g;
+
+<~>   is equivalent to $ENV{HOME}  (under unix)
+
+etc.
+
+Warm Regards
+Lev 
+Perl regex examples
+
+search for
+   perl regex examples
+   perl regex faq
+
+http://www.somacon.com/p127.php
+http://www.cs.tut.fi/~jkorpela/perl/regexp.html
+http://perldoc.perl.org/perlfaq6.html
+etc
+
+
+  s/^\s+|\s+$//g;   # trim
+
+saving regexes using qr{}
+
+doing for (m//g) {
+  # ...
+}
+

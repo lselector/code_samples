@@ -1,0 +1,21 @@
+
+Removing duplicates using hash
+
+# -------------------------------------
+my @data = qw(aa bb cc aa bb cc);  # array contains some duplicates
+print @data,"\n";
+
+my %hh; 
+@hh{@data} = ();     # intialize hash to undef values using slice syntax 
+@data = sort keys %hh; # put unique values back into the array
+print @data,"\n";
+
+# -------------------------------------
+# shorter way - using annonymous hash.
+# note %{{  }} - double-curlies are here for a reason
+# -------------------------------------
+my @data = qw(aa bb cc aa bb cc);  # array contains some duplicates
+print @data,"\n";
+
+@data = sort keys %{{map {$_ => 1} @data}};
+print @data,"\n";

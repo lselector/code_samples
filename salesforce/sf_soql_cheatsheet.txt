@@ -1,0 +1,191 @@
+SOQL  = Salesforce Object Query Language:
+    - case-insensitive keywords, object names and field names
+    - no comments allowed in SOQL
+
+================================================================
+
+-General querying syntax is similar to SQL. 
+
+select Id, Owner_Name__c 
+from DS__c  
+where owner_name__c like 'John Smith' 
+limit 5
+
+select id, owner_name__c 
+from ds__c  
+where owner_name__c like 'john smith' 
+limit 5  // same output
+
+select id, owner_name__c 
+from ds__c  
+where owner_name__c like 'john smi%'  
+limit 5  // same output
+
+select id, owner_name__c 
+from ds__c  
+where owner_name__c like '%smi%'  
+limit 5  // same output
+
+       // % - match zero or more chars
+       // _ - match 1 char
+
+select Id from abc__c  where owner_name__c  = null limit 5
+select Id from abc__c  where owner_name__c != null limit 5
+
+select Id from abc__c  
+where owner_name__c != null 
+order by Id desc 
+limit 5 offset 6    
+       // 5 rows after 6 skipped
+
+select Id, FirstName 
+from Account 
+where LastName like 'Johnson' 
+  and PersonMailingState = 'TX'
+
+select lastname, firstname, email 
+from contact 
+where email like '%gmail.com%' 
+order by lastName 
+limit 5
+
+SELECT Id, FirstName, PersonMailingState 
+FROM Account 
+WHERE PersonMailingState IN ('TX', 'CA', 'NY')
+
+select Name 
+from Account 
+where Id IN (
+  select AccountID 
+  from CustomObject__c 
+  where Type__c = 'Customer' )
+
+select count(Id) from Account
+select count_distinct(Company) from Lead
+
+select LeadSource, count(Company) 
+from Lead 
+group by LeadSource
+
+select min(Family_Size__pc) from Account 
+select max(Family_Size__pc) from Account
+
+// Using sum and avg functions will not allow you t
+// to use LIMIT at end of query. 
+// Recommend filtering using WHERE 
+
+select sum(Amount__c) 
+from PS__c 
+WHERE CreatedDate > 2019-05-30T14:00:00Z
+
+select avg(Amount__c) 
+from PS__c 
+WHERE CreatedDate > 2019-05-30T14:00:00Z
+
+================================================
+Datetime and Date Literals:
+
+  - CreatedDate field uses Datetime. Here’s how to filter via date.
+  - Quotes are not needed to filter by datetime.
+
+  Datetime:    2005-10-08T01:02:03Z
+  Date: 2005-10-08, TODAY, YESTERDAY, TOMORROW, 
+        THIS_WEEK, LAST_WEEK, NEXT_MONTH, LAST_MONTH, 
+        THIS_YEAR, LAST_YEAR, LAST_90_DAYS, 
+        etc.
+
+select Id from Account where CreatedDate > 2005-10-08T01:02:03Z
+select Id from Account where CreatedDate > 2005-10-08
+
+select Name, Amount, CloseDate from Opportunity where CloseDate = TODAY
+
+select TextBody 
+from EmailMessage 
+where MessageDate >= 2020-05-23T01:00:00Z 
+  and MessageDate < 2020-05-25T01:00:00Z
+
+Examples specifying dates and periods:
+
+  WHERE CALENDAR_YEAR(CreatedDate) = 2015
+
+  WHERE CALENDAR_YEAR(CreatedDate) = 2015 
+    and CALENDAR_MONTH(CreatedDate) = 1
+
+  WHERE Custom_Date__c = LAST_N_MONTHS:7
+  WHERE (Custom_Date__c = LAST_N_MONTHS:4)
+  WHERE Custom_Date __c = LAST_MONTH
+
+  WHERE (CreatedDate = LAST_MONTH 
+         OR CreatedDate = THIS_MONTH)
+
+  WHERE CreatedDate = LAST_N_WEEKS:2
+  WHERE Custom_Date__c = LAST_WEEK
+
+  WHERE Custom_Date__c >= LAST_N_DAYS:14 
+    AND Custom_Date__c < LAST_N_DAYS:13
+
+  WHERE CreatedDate <= TODAY
+
+================================================
+Joins: 
+  SOQL don't use JOINs on a table, 
+       but defines relationships 
+       between parent and child objects 
+       to query data.
+
+select Account.Name, (select Contact.Name from contacts) from Account
+
+select Account.Name, (select Contact.Name from contacts) 
+from Account 
+where Account.Id IN (select Contact.accountId from Contact)
+
+select id, Name, StageName, (select Id, Subject from Tasks) 
+from Opportunity
+where StageName = 'Prospecting' and (NOT Name like '%acme%')
+
+================================================
+polymorphic fields (who.name, who.type, etc.) 
+  are special field types 
+  that can point to different objects 
+  depending on the type of relationship
+
+select task.account.name, task.who.name, task.activitydate 
+from task 
+where task.activitydate <= TODAY 
+  and task.who.type = 'Contact' 
+  and task.account.annualrevenue > 150000000 
+ORDER BY task.account.annualrevenue DESC
+
+Note: 
+querying an object with polymorphic fields 
+may create a problem 
+if your user don't have permissions 
+for some of the objects to which it points.
+
+================================================
+Left Outer Join - SQL vs SOQL: 
+  https://salesforce.stackexchange.com/questions/156278/converting-sql-to-soql
+
+- Syntax is different between SQL and SOQL for joining
+
+SQL:
+
+    SELECT a.Field1, a.Field2, b.Field3 
+    FROM table1 AS a
+    LEFT JOIN table2 AS b 
+        ON  a.Field1 = b.Field1 
+       AND a.Field2 = b.Field2
+    WHERE a.Field3 < 100
+    AND b.Field 3 > 100
+
+SOQL:
+
+    SELECT Id, 
+        (SELECT Id, Field2__c, Field3__c 
+         from Bs__r 
+         WHERE Field3__c > 100)
+    FROM A__c 
+    WHERE Field3__c < 100
+
+================================================
+

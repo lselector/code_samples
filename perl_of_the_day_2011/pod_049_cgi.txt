@@ -1,0 +1,90 @@
+Hello,
+
+Today's topic - CGI (Common Gateway Interface).
+CGI scripts were widely used in 1990s to create web applications (before java and Microsoft caught up).
+Today CGI is still a very good way to go.
+Over the years many tools/modules were created to make the task easy and pleasant.
+
+How things work:
+A browser sends a request to web server to invoke a perl cgi script on the server.
+The scripts starts, does some work (for example, retrieves data from files or databases, 
+does some calculations), and then prints data back to the browser, - and exists.
+ 
+Example: Simple CGI script to print ENV variables to the browser:
+
+#!/usr/local/bin/perl -wT 
+$|++; 
+print "Content-type: text/html\n\n"; 
+print "<html><head><title>ENV</title></head><body>\n"; 
+print "<h3>Table on ENV variables and their values</h3>\n<table>\n"; 
+for my $key (sort keys %ENV) { 
+    print "<tr><td>$key</td><td>$ENV{$key}</td></tr>\n"; 
+} 
+print "</table></body></html>\n";
+
+Browser request can contain parameters (for example, information entered into a form).
+There is a module CGI.pm which helps to parse HTTP request to extract parameters.
+It also helps to format output data, reduce amount of necessary typing, adn does many other useful things.
+I always use this module.
+GCI.pm is a big module which started a whole family of modules.
+http://search.cpan.org/~lds/CGI.pm-3.43/CGI.pm
+http://stein.cshl.org/~lstein/
+http://www.wiley.com/legacy/compbooks/stein/
+Book - OFFICIAL GUIDE TO PROGRAMMING WITH CGI.PM - by Lincoln D. Stein
+
+Example:
+
+#!/usr/local/bin/perl -wT 
+use strict; 
+use CGI; 
+my $q = new CGI; 
+print $q->header("text/plain"); 
+my ($name, $value); 
+for $name ($q->param) { 
+  print "$name:\n"; 
+  for $value ($q->param($name) ) { 
+    print "$value:\n"; 
+  } 
+}
+
+Note - there are 4 ways to use param() function: 
+$scalar  =   $q->param('name');  # returns the value 
+@array   =   $q->param('name');  # returns array of values for this name 
+$scalar  =   $q->param( );  # returns the number of all named form elements 
+@array   =   $q->param( );  # returns an array of names of all form elements
+
+There are many other useful modules:
+HTML::Template - allows you to separate page layout design into a separate file (template).
+  http://search.cpan.org/~wonko/HTML-Template-2.10/lib/HTML/Template.pm
+or faster version written in C:
+  http://search.cpan.org/~viy/HTML-Template-Pro-0.9508/lib/HTML/Template/Pro.pm
+ 
+CGI::Application - excellent module to organize multi-page web application.
+  http://search.cpan.org/~markstos/CGI-Application-4.50/lib/CGI/Application.pm
+  http://www.selectorweb.com/perl_cgi_appl_module.html
+
+CGI::Carp
+CGI::Debug
+etc.
+
+Note - every time CGi script is invoked, there is a delay (to load perl and to start the script).
+For fast-performing web sites you can use mod_perl to keep compiled scripts in the memory and reuse them.
+(mod_perl also helps to keep database connections open between requests).
+http://en.wikipedia.org/wiki/Mod_perl
+
+Note:
+In one of the previous issues of this subscription we have discussed how to make a web spider to download information from the web. This is not CGI, but as it is web related, I think it is a good place to remind about some modules related to this task:
+LWP::Simple
+LWP::UserAgent
+HTTP::Request
+HTTP::Response
+HTTP::Request::Common
+Regexp::Common qw(URI)
+WWW::Mechanize
+HTTP::Cookies
+WWW::Search
+HTML::Parser
+HTML::TreeBuilder
+HTML::TokeParser
+Template::Extract
+

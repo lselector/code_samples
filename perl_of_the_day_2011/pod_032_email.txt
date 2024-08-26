@@ -1,0 +1,176 @@
+
+Hello,
+
+Sendnig email from Perl - there are many ways of doing this.
+Below are 3 most common ways which I have used myself
+
+# ---------------------------------------------------------------
+# method 1 - sending simple text email piping into sendmail command
+# ---------------------------------------------------------------
+#!/usr/bin/perl
+
+use strict ;
+use warnings;
+
+my $sendmail = "/usr/sbin/sendmail -t";
+my $to       = "john.smith\@somedomain.com";
+my $from     = $to;
+my $subject  = "some subject";
+my $content  = "Some text1\nsome text2\netc.\n";
+
+open(my $sm, "|$sendmail") 
+  or die "Cannot open $sendmail: $!";
+print {$sm} "To: $to\n";
+print {$sm} "From: $from\n";
+print {$sm} "Subject: $subject\n\n";
+print {$sm} $content;
+close($sm);
+
+# ---------------------------------------------------------------
+# method 2 - using module Net::SMTP for sending simple text email
+# ---------------------------------------------------------------
+
+use Net::SMTP;
+
+  my $smtp;
+  while ($attempts < 20) {
+    $attempts ++;
+    mylog("Communicating with SMTP server $smtp_server - $attempts attempt");
+    $smtp = Net::SMTP->new($smtp_server);
+    last if $smtp;
+    sleep(3);
+  }
+  if (! $smtp) {
+    die "Exiting - Couldn't create a new smtp object : $!";
+  }
+
+  $smtp->mail($email_from);
+  $smtp->to(@emails_to);
+  # $smtp->cc(@emails_cc);
+  $smtp->data();
+  my $tolist = "<" . join(">,<",@emails_to) . ">";
+  mylog("To: $tolist");
+  $smtp->datasend("To: $tolist\n");
+
+  mylog("From: $email_from");
+  $smtp->datasend("From: $email_from\n");
+
+  mylog("Subject: " . $subject);
+  $smtp->datasend("Subject: " . $subject . "\n\n");
+
+  $dm->mylog($message);
+  $smtp->datasend($message);
+
+  $smtp->dataend();
+  $smtp->quit;
+
+# ---------------------------------------------------------------
+# method 3 - using module MIME::Lite for sending emails with attachments
+#            (or module MIME::Base64 - see docs for that)
+# ---------------------------------------------------------------
+
+Below is a complete working implementation using MIME::Lite.
+You can use it for sending plain emails without attachments like this:
+  $dm->send_email_attach($subject,$part_body, [], $remails);
+
+# ---------------------------------------------------------------
+# send_email_attach()
+# $dm->send_email_attach($subject,$part_body [,$parts_attach [,$ref_to_arr_of_emails_to]] )
+#   where 
+#     $part_body = { type => 'text/plain', text => $some_text }; # or 'text/html' or 'text/rtf'
+#   next 2 parameters are optional
+#     $parts_attach = [ {type => $type1, path => $fname1}, {type => $type2, path => $fname2}, [etc.] ]
+#     $ref_to_arr_of_emails_to - is optional
+#
+# Frequently used MIME types:
+#   text/plain, text/csv, text/html, text/rtf, text/tab-separated-values
+#   image/gif, image/jpeg, audio/mpeg (used for mp3)
+#   application/xml, application/msword, application/excel, application/zip
+# 
+# In rare cases when you might need some other file type - send it in a zip file,
+# or use specific MIME type (search on Google for: mime types)
+# Good link: http://www.akadia.com/services/email_attachments_using_perl.html
+# ---------------------------------------------------------------
+sub send_email_attach {
+  my $dm= shift;
+  my $subject   = shift;
+  my $part_body = shift; 
+  my $parts_attach = shift || "";
+  my $remails = shift || []; 
+
+  use MIME::Lite;        # to send emails with attachments - send_email_attach()
+  use Net::SMTP;         # to send emails
+
+  if($dm->{do_not_send_email}) {
+    $dm->mylog("Not sending email, because 'do_not_send_email' flag is set in the config file");
+    return;
+  }
+
+  my $smtp_server = $dm->{email_smtp_server} || "";
+  if (length($smtp_server) <=0) {
+    $dm->mylog("Can't send email because email_smtp_server is NOT specified in the config file");
+    return;
+  }
+
+  if ( scalar(@$remails) <= 0  &&  scalar(@{$dm->{emails}}) >=1 ) {
+    $remails = $dm->{emails};
+  }
+
+  my $email_from = $dm->{email_from}  || "";
+  if (length($email_from) <=0 or scalar(@$remails) <=0) {
+    $dm->mylog("Can't send email because no email info is provided");
+    return;
+  }
+
+  my $emails_to   =  join(",",@$remails);
+
+  $dm->mylog("Sending email from << $email_from >> to << $emails_to >> with subject: $subject");
+
+  ### Create the multipart container
+  my $msg = MIME::Lite->new (
+    From => $email_from,
+    To => $emails_to,
+    Subject => $subject,
+    Type =>'multipart/mixed'
+  ) or $dm->myerrexit("Error creating multipart container: $!");
+  
+  ### Add the text message part
+  $msg->attach (
+    Type => $part_body->{type},
+    Data => $part_body->{text}
+  ) or $dm->myerrexit("Error adding the text message part: $!");
+
+  ### Add attachments
+  for my $part (@$parts_attach) {
+    my $file = $part->{path};
+    $msg->attach (
+      Type     => $part->{type},
+      Path     => $file,
+      Filename => $file,  # fname on the receiver's side
+      Disposition => 'attachment'
+    ) or $dm->myerrexit("Error attaching $file: $!");
+  }
+  
+
+  my $attempts = 0;
+  my $success = "";
+  while ($attempts < 20) {
+    $attempts ++;
+    $dm->mylog("Sending email - $attempts" .numsuff($attempts)." attempt");
+    $dm->mylog("Setting the email-send method as 'SMTP' via SMTP server $smtp_server");
+    MIME::Lite->send('smtp', $smtp_server, Timeout=>60); # sets the method of sending
+    # MIME::Lite dies on errors - so we have to trap it with eval
+    eval '$success = $msg->send';
+    if ($@) {
+      $dm->mylog("Error sending email: $@ , will retry in 1 min");
+      $success = "";
+    }
+    last if((defined $success) && $success);
+    sleep(60); # wait 1 min
+  }
+  if (! $success) {
+    die "Exiting - Couldn't send an email";
+  }
+  $dm->mylog("email was sent OK");
+
+}

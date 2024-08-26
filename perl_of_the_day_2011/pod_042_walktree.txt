@@ -1,0 +1,106 @@
+Hello,
+
+Today's topic - going through a directory tree recursively to find/process certain files/links/directories.
+
+As usual, there are more than one way of doing this.
+Below I list 3 examples:
+  - invoking external unix command "find"
+  - using module Find::File
+  - writing your own recursive code in perl
+
+============================================================
+(1) use external command to generate a list of files to process:
+
+my $cmd = qq{ find . -follow -maxdepth 8 }
+            . qq{ \\( -iname '*.cgi' -o -iname '*.pl' -o -iname '*.class' \\) -print }
+            . qq{ 2>/dev/null};
+
+chomp (my @list = qx{$cmd});
+map { print $_,$/; } @list;
+
+============================================================
+(2) use module Find::File
+http://perldoc.perl.org/File/Find.html
+
+use File::Find;
+find(\&wanted, @directories_to_search);
+sub wanted { ... }
+============================================================
+(3) write your own recursive walk_tree code.
+Here is a simple example just to give you an idea.
+
+my $filetype = '(txt|html?|js|css|cgi|pl|dat|java)';
+chomp (my $cd = qx{pwd});
+
+&walk_tree($cd, \&do_file, \&do_dir);
+
+# ------------------------------------------------
+# do_file()
+# ------------------------------------------------
+sub do_file {
+  my $file = shift;
+  if ($filename !~ /\.($filetype)$/i) { return; }
+  my $ss;
+  print "$file\n";  
+  { local $/=undef; open (IN, $file); $ss=<IN>; close(IN); }
+  open(OUT,">$file");
+  print OUT "$ss \n";
+  close(OUT);
+}
+
+# ------------------------------------------------
+# do_dir()
+# ------------------------------------------------
+sub do_dir {
+  print $_[0], "\n";
+}
+
+# ------------------------------------------------
+# walk_tree()
+# ------------------------------------------------
+sub walk_tree {
+  my ($dir, $filefunc, $dirfunc) = @_;
+  if (-f $dir) { $filefunc->($dir) }
+  else {
+    opendir my $dh, $dir or return;
+    $dirfunc->($dir);
+    while (my $file = readdir $dh) {
+      next if $file eq '.' || $file eq '..';
+      walk_tree("$dir/$file", $filefunc, $dirfunc); 
+    }
+  }
+}
+
+Note - the code above doesn't change the directory.
+We simply open paths which are getting longer and longer as we go deeper into the tree.
+This works fine in Unix, but can break on Windows becase Windows can't handle very long paths.
+Solution for windows is to change directory to step into a subdirectory to process it - and then step out ( cd .. ) at the end.
+
+      chdir $entry or die "can't chdir into dir $absdir/$entry: $!";
+      walk_tree($newdir);
+      chdir ".."  or die "can't chdir back into dir $absdir: $!";
+
+So the walk_tree() may look like this:
+
+
+# ---------------------------------------------------------------
+# walk_tree()
+# ---------------------------------------------------------------
+sub walk_tree {
+  my $absdir =  shift;
+  opendir my $dh, '.' or die "can't open dir $absdir: $!";
+  my @entries = readdir $dh;
+  close($dh);
+
+  for my $entry (@entries) {
+    next if $entry eq '.' || $entry eq '..';
+    if (-f $entry) {
+      # process file
+    } elsif (-d $entry) {
+      my $newdir = "$absdir/$entry";
+      chdir $entry or die "can't chdir into dir $absdir/$entry: $!";
+      walk_tree($newdir);
+      chdir ".."  or die "can't chdir back into dir $absdir: $!";
+    }
+  }
+}

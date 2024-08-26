@@ -1,0 +1,146 @@
+python one-liners
+
+# -------------------------------------
+from sys import platform; print(platform)              # darwin
+from socket import gethostname; print(gethostname())   # Levs-MacBook-Pro.local
+import os; print(os.uname()[1])                        # Levs-MacBook-Pro.local
+import platform; print(platform.uname()[1])            # Levs-MacBook-Pro.local
+import platform; print(platform.node())                # Levs-MacBook-Pro.local
+# -------------------------------------
+# start HTTP server to serve current directory as 
+   http://localhost:8000/
+   or
+   http://0.0.0.0:8000/
+python3 -m http.server
+# -------------------------------------
+# byte-compile all python files in a directory
+from compileall import compile_dir; compile_dir("mydir")
+# -------------------------------------
+# running python oneliner from unix prompt
+python -c "for ii in range(10):print('hello') "
+# -------------------------------------
+# Editing a list of files in place
+# Warning: if you run this, it will edit all files in your directory
+#
+# substitute all words 'mama' to words 'papa' 
+# in all files in current directory
+
+python -c "import sys,os,re,fileinput;a=[i[2] for i in os.walk('.') if i[2]] [0];[sys.stdout.write(re.sub('mama','papa',j)) for j in fileinput.input(a,inplace=1)]"
+
+# remove all '\r' characters (MS DOS carriage returns)
+ 
+python -c "import sys,os,os.path,re,fileinput;a=[f for f in os.listdir('.') if not os.path.isdir(f)];[sys.stdout.write(re.sub(r'\r','',j)) for j in fileinput.input(a,inplace=1)]"
+
+# note - in this particular case 
+it is much easier to do it using perl:
+
+perl -pi -e 's/\r//' *
+
+# -------------------------------------
+# echo unicode character:
+print(chr(234))
+# -------------------------------------
+# Display list of all users on Unix-like systems
+for line in open("/etc/passwd"): print(line.split(":")[0])
+# -------------------------------------
+# Apply regular expression to lines from stdin
+[another command] | python -c "import sys,re;[sys.stdout.write(re.sub('PATTERN', 'SUBSTITUTION', line)) for line in sys.stdin]"
+# -------------------------------------
+# Modify lines from stdin using map
+python -c "import sys; tmp = lambda x: sys.stdout.write(x.split()[0]+'\t'+str(int(x.split()[1])+1)+'\n'); map(tmp, sys.stdin);"
+# -------------------------------------
+# Compress CSS file
+python -c 'import re,sys;print re.sub("\s*([{};,:])\s*", "\\1", re.sub("/\*.*?\*/", "", re.sub("\s+", " ", sys.stdin.read())))'
+# -------------------------------------
+# Decode string written in Hex (python2)
+python -c "print ''.join(chr(int(''.join(i), 16)) for i in zip(*[iter('474e552773204e6f7420556e6978')]*2))"
+# -------------------------------------
+# Retrieve content text from HTTP data (python2)
+python -c "import sys; print sys.stdin.read().replace('\r','').split('\n\n',2)[1]";
+# -------------------------------------
+# Prints file extension
+print('~/python/one-liners.py'.split('.')[-1])
+# -------------------------------------
+# Escapes content from stdin (python2)
+# This can be used to convert a string into a "url safe" string
+python -c "import urllib, sys ; print urllib.quote_plus(sys.stdin.read())";
+# -------------------------------------
+# Reverse order of lines in stdin
+python -c "import sys; print('\n'.join(reversed(sys.stdin.read().split('\n'))))"
+# -------------------------------------
+# Print top 10 lines of stdin
+python -c "import sys; sys.stdout.write(''.join(sys.stdin.readlines()[:10]))" < /path/to/your/file
+# -------------------------------------
+# Multiple Each Item in a List by 2
+print(list(map(lambda x: x * 2, range(1,11))))
+# -------------------------------------
+# Sum a List of Numbers
+print(sum(range(1,1001)))
+# -------------------------------------
+# Verify if Exists in a String
+wordlist = ["scala", "akka", "play framework", "sbt", "typesafe"]
+tweet = "This is an example tweet talking about scala and sbt."
+print(list(map(lambda x: x in tweet.split(),wordlist)))
+# -------------------------------------
+# Read in a File
+print(open("ten_one_liners.py").readlines())
+# -------------------------------------
+# Happy Birthday to You!
+print(list(map(lambda x: "Happy Birthday to " + ("you" if x != 2 else "dear Name"),range(4))))
+# -------------------------------------
+# Filter list of numbers (python2)
+print reduce(lambda(a,b),c: (a+[c],b) if c > 60 else (a,b + [c]), [49, 58, 76, 82, 88, 90],([],[]))
+# -------------------------------------
+# Fetch and Parse an XML web service (python2)
+
+from xml.dom.minidom import parse, parseString
+import urllib2
+# note - i convert it back into xml to pretty print it
+print(parse(urllib2.urlopen("http://search.twitter.com/search.atom?&q=python")).toprettyxml(encoding="utf-8"))
+
+# -------------------------------------
+# Find minimum (or maximum) in a List
+print(min([14, 35, -7, 46, 98]))
+print(max([14, 35, -7, 46, 98]))
+# -------------------------------------
+# Parallel Processing
+import multiprocessing, math
+print(list(multiprocessing.Pool(processes=4).map(math.exp,range(1,11))))
+# -------------------------------------
+# largest number that can be represented by 8 bytes
+print('\n'.join("%i Byte = %i Bit = largest number: %i" % (j, j*8, 256**j-1) for j in (1 << i for i in range(8))))
+# -------------------------------------
+# Function that returns the set of all subsets of its argument
+f = lambda x: [[y for j, y in enumerate(set(x)) if (i >> j) & 1] for i in range(2**len(set(x)))]
+f([10,9,1,10,9,1,1,1,10,9,7])
+# -------------------------------------
+# Alternately (shorter, more functional version):
+from functools import reduce
+f = lambda l: reduce(lambda z, x: z + [y + [x] for y in z], l, [[]])
+f([10,9,1,10,9,1,1,1,10,9,7])
+# -------------------------------------
+# Decode a base64 encoded file
+import base64, sys; base64.decode(open(sys.argv[1], "rb"), open(sys.argv[2], "wb"))
+# -------------------------------------
+# One way to fit a program with blocks into 
+# one-liner is to use exec function:
+exec("""for ii in [1,2]:\n  print('line1')\n  print("line2")\nprint('DONE')\n""")
+# -------------------------------------
+# Here is a short idiom to parse a comma-separated 
+# string into a sorted list of integers (duplicates removed):
+
+import re
+s1 = '55 , junk 1 , more junk 2.0,  1, 55,  33'
+
+s1 = re.sub(r'[^0123456789,.]','',s1)                       # remove everything except numbers, dots and commas
+l1 = [int(float(x)) for x in s1.split(',') if x is not '']  # split, remove empty, convert to int
+l1 = sorted(list(set(l1)))                                  # remove duplicates and sort
+
+print(l1)
+# -------------------------------------
+
+# Note - the above examples were collected from many pages on the web, including:
+#   http://wiki.python.org/moin/Powerful%20Python%20One-Liners/
+#   http://codeblog.dhananjaynene.com/2011/06/10-python-one-liners-to-impress-your-friends/
+#   http://linuxgazette.net/issue96/orr.html
+#   http://www.catonmat.net/blog/top-ten-one-liners-from-commandlinefu-explained/

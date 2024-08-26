@@ -1,0 +1,19 @@
+deep copy
+
+Try to understand how it works, ask questions.
+
+# --------------------------------------------------------------
+# deep_copy() - http://www.stonehenge.com/merlyn/UnixReview/col30.html
+#   my $ref_tree2 = deep_copy($ref_tree1);
+#   creates a true deep copy of multi-dimensional arrays or hashes
+# --------------------------------------------------------------
+sub deep_copy {
+  my $this = shift;
+  if (not ref $this) { # scalar - just return it
+    $this;
+  } elsif (ref $this eq "ARRAY") { # array - return ref to annonymous array (recursive)
+    [map deep_copy($_), @$this];
+  } elsif (ref $this eq "HASH") {  # hash  - return ref to annonymous hash  (recursive)
+    +{map { $_ => deep_copy($this->{$_}) } keys %$this};
+  } else { die "what type is $_?" }
+}

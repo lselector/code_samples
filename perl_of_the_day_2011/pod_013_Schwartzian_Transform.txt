@@ -1,0 +1,32 @@
+Today's topic is Schwartzian Transform.
+
+http://en.wikipedia.org/wiki/Schwartzian_transform
+
+This is basically a 3-step sorting method proposed by Randal Schwartz.
+   http://www.stonehenge.com/merlyn/
+   http://www.stonehenge.com/merlyn/UnixReview/col64.html
+
+For example, let's say you have a list of emails - and you want to sort them by domain name.
+Here is how it is done:
+
+my @sorteddata =                           # Schwartzian Transform: 
+  map {$_->[0]}                            # map back 
+  sort { $a->[1] cmp $b->[1] }             # sort by cleanned element 
+  map { m/@([a-zA-Z0-9\-.]*)\b/; [$_, $1]} # map to a list anon.2-element arrays 
+  @data; 
+
+Explanation:
+
+Read the above statement from bottom to top (from right to left, from end to beginning)
+
+Step1:
+   use map to convert each email from @data array into an anonymous array with 2 elements: [email, domain]
+   so now you have array of anonymous arrays
+
+Step2:
+   sort this array by domain
+   Now you have sorted array of anonymous arrays 
+
+Step3:
+   use map to extract emails from sorted array
+

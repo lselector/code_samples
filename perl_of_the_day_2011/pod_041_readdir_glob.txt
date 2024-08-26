@@ -1,0 +1,36 @@
+Hello,
+
+Today's topic - getting directory listing.
+
+my $dir = "/some/dir";
+opendir my $dh, $dir 
+  or die "Can't open dir $dir : $!";
+while (my $obj = readdir $dh) {
+  next if $obj eq '.' || $obj eq '..';
+  if (-d $obj) {
+    # directory processing
+  } elsif (-f $obj) {
+    # file processing
+  } else {
+    # some other processing
+  }
+}
+close($dh);
+
+
+Another way is to use glob() function
+http://perldoc.perl.org/functions/glob.html
+
+my @files = glob("*.c *.h");
+my @everything = glob(".* *");
+
+Note: perl can use similar wildcard expressions in the diamond operator.
+In this case glob() function is actually called.
+
+while (<*.c>) {
+  chmod 0644, $_;
+}
+
+Yet another way (not recommended):
+  chomp(@files=qx{/bin/ls});
+

@@ -1,0 +1,27 @@
+Today - several examples of using backticks ( ` ... `  or qx{ ... } )  to take advantage of unix commands.
+
+Here is how to get current date from inside perl using unix date command:
+
+    chomp(my $yyyymmdd = qx{date +\%Y\%m\%d});
+
+Note - you can also use regular method using localtime() function - but the line above is shorter.
+I use it when I am lazy and when speed is not the main concern.
+Note also the use of chomp() to remove trailing new-line symbol.
+
+Another example - get a listing of certain files in a directory:
+
+   chomp(my @files = qx{/bin/ls -1 *.txt});
+
+Note in the example above that chomp will chomp every element of the array.
+
+Another example - get a result of grep command into an array:
+
+  chomp (my @fnames = qx{grep -l  mykeyword  *.txt});
+
+Another example - reading a short file:
+
+   my $txt = qx{cat  $fname};
+
+or
+
+   chomp(my @lines = qx{cat  $fname});

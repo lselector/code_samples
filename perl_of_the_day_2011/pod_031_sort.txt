@@ -1,0 +1,58 @@
+Folks,
+
+Today's issue is about sorting.
+http://perldoc.perl.org/functions/sort.html
+
+string sort:
+@sorted = sort {$a cmp $b} @arr;
+or 
+@sorted = sort @arr;  # if no sorting code is specified - it defaults to string sort
+
+Note the use of predefined variables $a and $b. 
+During the sort they are substituted by values of the array to do the comparison.
+
+numeric sort
+@sorted = sort {$a <=> $b} @arr;
+
+To reverse the order - jsut switch $a and $b:
+@sorted = sort {$b <=> $a} @arr;
+
+You can sort into array itself:
+@arr = sort @arr;
+
+When you provide the code { ... } - it is effectively a reference to a subroutine.
+This subroutine processes 2 predefined variables ($a & $b) and should return 1,0,or -1 depending on some rules.
+You can make very complicated rules.
+For example, when sorting email addresses, you can sort first by domain, then by name.
+
+To speed up sorting you need to cache intermediate data so that you don't have to repeat comparisons.
+This may be done in different ways.
+Also sorting is frequently done in 3 steps:
+   transform original array,  sort, transform back
+For example, Schwartzian Transform:
+my @sorteddata =                           # Schwartzian Transform: 
+  map {$_->[0]}                            # map back 
+  sort { $a->[1] cmp $b->[1] }             # sort by cleanned element 
+  map { m/@([a-zA-Z0-9\-.]*)\b/; [$_, $1]} # map to a list anon.2-element arrays 
+  @data; 
+
+The Schwartzian Transform uses caching in anonymous arrays.
+People use other structures (like hashes or strings) for caching.
+Read documentation to module Sort::Maker
+http://search.cpan.org/~uri/Sort-Maker-0.06/Sort/Maker.pm
+This module allows you to compose different types of sorts,
+and to benchmark them to select the right one for you.
+The documentation provides descriptions of those sorts and their relative pros/cons.
+
+More tips:
+
+You can "pipe" commands together, for example:
+print reverse sort map {lc} keys %hash; 
+which is equivalent to:
+print(reverse(sort(map({lc},keys(%hash)))));
+
+Note - reverse() can be used to change the order of sorting. But this is wrong because this means that you first sort in one order, and then spend time reversing it. Better just switch $a and $b in the original sort.
+
+You can combine several lists together into one sort:
+sort @guys, @gals, other();
+

@@ -1,0 +1,38 @@
+Hello,
+
+Today's topic - global variables and typeglobs .
+
+Perl has several types of variables: 
+   global ("package") variables
+   my() variables
+   local() variables
+
+Today we will discuss global variables.
+Global variables are created using this syntax:
+      our($frobbed, @munge, %seen);        # this is new way
+      use vars qw($frobbed @munge %seen);  # this works, but it is old style
+
+Global variables are stored in current package 
+which is "main" by default, unless you change it using command "package ...;".
+
+Package variables can be accessed from anywhere using fully-qualified names like this:
+   $main::var1          # scalar
+   @Package1::var2      # array in Package1 
+   %Package2::var3      # hash in Package2
+
+Each package has its own structure (name table) to keep track of names.
+Internally it is implemented similar to a hash.
+For each name a hash element is created, called "typeglob".
+Typeglob has 7 children for different types - a scalar variable, array, hash, subroutine, file handle, package, etc.
+
+You can access a glob as a whole using '*' prefix, and you can alias one typeglobe to another
+      *bar = *foo;  # typeglob assignment
+
+This is similar to making a link in unix. After that
+      $foo = 2;
+      print $bar;  # will print 2, because bar is aliased to foo
+
+You can do many more things with typeglobs, although it is rarely needed in everyday practice.
+Read more here:
+  http://www252.pair.com/comdog/mastering_perl/Chapters/08.symbol_tables.html
+

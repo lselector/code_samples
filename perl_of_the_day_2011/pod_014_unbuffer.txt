@@ -1,0 +1,50 @@
+Hello,
+
+Today we talk about output unbufferring.
+
+By default, file handlers in perl are buffered (except for STDERR).
+So you may be printing something out into a file - but nothing would show up.
+If your script sends STDOUT and STDERR into the same log or on the screen, 
+the order of output lines may be wrong (because STDOUT output may be
+delayed in the buffer, whereas STDERR goes out without delays).
+
+Thus I usually unbuffer STDOUT.
+
+Similarly, if I am writing into a file and want to monitor its growth, I 
+would want to unbuffer its file handle too.
+
+The easy way to unbuffer the STDOUT handler is to set variable $| to 
+something which is true, for example:
+   $| = 1;
+
+Note: false values in perl are:
+  undef
+  zero number
+  empty string - really empty, no spaces
+  "0" - string containing one zero and no other characters
+
+If you want to unbuffer some other handle - you need to select it first.
+  http://perldoc.perl.org/functions/select.html
+
+For example:
+
+open(my $fh,">",$myfile)
+  or die "Can't open file $myfile for writing: $!";
+my $oldfh = select($fh);  # select returns previous selected file handle
+$| = 1;                   # unbuffer $fh 
+select($oldfh);           # select previous file handle (probably STDOUT)
+
+
+I prefer to use explicit autoflash method from IO::Handle:
+
+use IO::Handle;          # this exports autoflash() (and some useful methods)
+*STDOUT->autoflush();    # autoflush to ensure proper logging
+*STDERR->autoflush();    # autoflush to ensure proper logging
+*STDERR = *STDOUT;       # redirect STDERR into STDOUT for proper logging
+                         # (if this is what you want to do)
+
+open(my $fh, ">", $myfile)
+  or die "Can't open file $myfile for writing: $!";
+$fh->autoflush();
+print {$fh} "Hello\n";
+

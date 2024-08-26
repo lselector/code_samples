@@ -1,0 +1,15 @@
+Here is today-s example.
+Please run it, try to figure out how it works.
+Ask questions.
+Rewrite using my() instead of local()
+
+# ---------------------------------------------------------------
+# commify($number) - adds commas into a number: 1,234.00
+#   note: make sure you don't have 4 or more digits after the 
+#         decimal point - or it will add commas there. 
+# ---------------------------------------------------------------
+sub commify {
+  local $_  = shift;
+  1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
+  return $_;
+}

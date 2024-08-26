@@ -1,0 +1,24 @@
+Hello,
+
+It is worth repeating that false values in perl are:
+  undef - undefined value
+  0     - zero number
+  ""    - empty string - really empty, no spaces
+  "0"   - string containing one zero and no other characters
+
+Note - if you have warnings turned on   (via using "-w" option or via saying:  use warnings;)
+then you may get warnings like this:
+
+    Use of uninitialized value at test.pl line 8.
+
+Note - you only will get them if you are trying to do math operation or comparison with the undefined value, for example:
+
+use strict ;
+use warnings;
+my $aa = undef;
+if ($aa > 0) {
+   ...
+
+If you just say
+     if ($aa)   or     if (!$aa)
+then there will be no warning.

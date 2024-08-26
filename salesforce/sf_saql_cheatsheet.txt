@@ -1,0 +1,272 @@
+Salesforce Einstein Analytics has its own query language
+
+SAQL = Salesforce Analytics Query Language
+
+Example:
+================================================
+accounts = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+opps = load "0Fcyy000000002qCAA/0Fcyy000000002WCAQ";
+
+c = group accounts by 'Year', opps by 'Year';
+d = foreach c generate opps.Year as 'Year';
+e = filter d by Year == "2002";
+
+================================================
+Docs, Performance tips:
+  - https://developer.salesforce.com/docs/atlas.en-us.bi_dev_guide_saql.meta/bi_dev_guide_saql/bi_saql_intro.htm
+
+================================================
+ - comments start with -- (two sequential hyphens)
+ - Keywords and names/identifiers are case-sensitive
+ - Keywords must be lowercase.
+ - identifiers may be with or without single quotes (')
+ - unquoted identifiers should be alphanumeric, no spaces, start with letter.
+ - Scientific E notation for numbers is not supported
+ - The responses to queries are in JSON.
+ - double quotes are used for string values   "I am a string"
+ - special chars can be included into strings like this: "\n, \r, \t, \', \", \\"
+ - math operators: +,-,*,/,% (modulo)
+ - comparison operators: ==, !=, <, <+, >, >=, matches, in, not in
+       my_matches = filter a by origin matches "LA";
+       a1 = filter a by origin in ["ORD", "LAX", "LGA"];
+       weather in ["rain", "wind"] = true
+       weather not in ["rain", "wind"] = false
+ - string operation - "+" to concatenate
+       q = foreach q generate Id as Id, Year + "-" + Month + "-" + Day as CreatedDate;
+ - logical operators: &&, ||, !,
+       Examples:  x && y, x || y, !x
+ - null operators:  is null,  is not null
+================================================
+q = load "Accounts";
+q = load "0Fcc00000004DI1CAM/0Fd500000004F4sCAE";  -- loads dataset "ContainerID/VersionID"
+================================================
+q = load "0Fcc00000004DI1CAM/0Fd500000004F4sCAE";
+q = group q by all;
+q = foreach q generate count() as 'count', unique('OL.Helpful') as 'unique_OL.Helpful';
+limit q 2000;
+================================================
+The statement order rules:
+  The order of filter and order can be swapped because it doesn't change the results.
+  offset must be after filter and order
+  offset must be before limit
+  There can be no more than 1 offset statement after a foreach statement.
+================================================
+Examples of filters:
+    a1 = filter a by origin in ["ORD", "LAX", "LGA"];
+    y = filter x by dest == "LAX" || miles > 1500;
+================================================
+Special characters which have special meaning:
+
+; - Semicolon - Used to terminate statements.
+
+' - Single quote - Used to quote identifiers.
+
+" - Double quote - Used to quote strings.
+
+() - Parentheses - Used for function calls, to enforce precedence,
+     for order clauses, and to group expressions.
+     Parentheses are mandatory when you’re defining more than one
+     group or order field.
+
+[] - Brackets - Used to denote arrays.
+     For example, this is an array of strings: [ "I", "am", "an", "array" ]
+     Also used for referencing a particular member of an object.
+     For example, em['miles'], which is the same as em.miles.
+
+. - Period - Used for referencing a particular member of an object.
+    For example, em.miles, which is the same as em['miles'].
+
+:: - Two colons - Used to explicitly specify the dataset
+     that a measure or dimension belongs to, by placing it between
+     a dataset name and a column name.
+     Using two colons is the same as using a period (.) between names.
+     For example:   data = foreach data generate left::airline as airline
+
+.. - Two periods - Used to separate a range of values. For example:
+          c = filter b by "the_date" in ["2011-01-01".."2011-01-31"];
+
+================================================
+a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+a = filter a by Year in [];
+c = group a by ('Year', 'Name');
+d = foreach c generate 'Name' as 'group::AName',
+    'Year' as 'group::Year',
+    sum(accounts::Revenue) as 'sRev';
+
+================================================
+foreach - applies a set of expressions to every
+          row in a dataset. Often called as "projection".
+
+    q = foreach q generate expression as alias[, expression as alias ...];
+The output column names are specified with the as keyword.
+The output data is ungrouped.
+
+When used with ungrouped data, the foreach statement maps
+the input rows to output rows.
+The number of rows remains the same.
+Example:
+      a2 = foreach a1 generate carrier as carrier, miles as miles;
+
+When used with grouped data, the foreach statement behaves differently.
+Fields on which you were grouping can be referenced directly
+Other fields should be put in aggregate functions (sum(), avg(), etc.)
+     z = foreach y generate day as day, unique(origin) as uorg, count() as n;
+
+Using a name multiple times in a projection throws an error, for example:
+l = load "0Fabb000000002qCAA/0Fabb000000002WCAQ";
+r = load "0Fcyy000000002qCAA/0Fcyy000000002WCAQ";
+l = foreach l generate 'value'/'divisor' as 'value' , category as category;
+r = foreach r generate 'value'/'divisor' as 'value' , category as category;
+cg = cogroup l by category right, r by category;
+cg = foreach cg generate r.category as 'category',
+     sum(r.value) as sumrval,
+     sum(l.value) as sumrval; -- ERROR!
+
+================================================
+group syntax:
+  result = group rows by field;
+  result = group rows by (field1, field2, ...);
+  result = group rows by expression[, rows by expression ...];
+  result = group rows by expression [left | right | full], rows by expression;
+
+Example:
+    a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    a = group a by (year, month);
+    a = foreach a generate year as year, month as month;
+
+================================================
+Cogrouping is similar to INNER JOIN in SQL.
+Two or more input streams are grouped independently
+and arranged side by side.
+For example:
+    a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    b = load "0Fbyy000000002qCAA/0Fcyy000000002WCAQ";
+    a = cogroup a by carrier, b by carrier;
+
+Note - you can’t have the same stream on both sides
+       of a cogroup operation.
+       To perform a cogroup operation on 1 dataset,
+       load the dataset twice so you have 2 streams.
+
+Example: load one dataset - and split it into two streams,
+         then cogroup them:
+
+a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+a = filter a by "region" in ["West"];
+a = filter a by "status" in ["closed"];
+b = filter a by "year" in [2014];
+c = filter a by "year" in [2015];
+d = cogroup b by ("state"), c by ("state");
+d = foreach d generate "state" as "state",
+    sum(b.Amount) as "Amount_2014",
+    sum(c.Amount) as "Amount_2015";
+
+================================================
+Example:
+    a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    b = load "0Fbyy000000002qCAA/0Fcyy000000002WCAQ";
+    c = cogroup a by x, b by y;
+    d = foreach c generate a.x as x, a.y as y, sum(a.miles) as miles;
+
+================================================
+If a lens or dashboard has a cogroup query, 
+specify the input stream for projections and for count() aggregations 
+on cogroup queries, as in this example:
+
+    a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    b = load "0Fbyy000000002qCAA/0Fyy000000002WCAQ";
+    c = cogroup a by 'OwnerName', b by 'OwnerName';
+    c = foreach c generate a['OwnerName'] as 'OwnerName', sum(a['AmountConverted']) /
+        sum(b['Amount']) as 'sum_target_completed', count(a) as count;
+
+================================================
+Outer Cogrouping - similar to OUTER JOIN in SQL. 
+For the half-matches, null rows are added. 
+The grouping keys are taken from the input that provides the value.
+
+Syntax:
+    result = cogroup rows by expression [left | right | full], rows by expression;
+Specify left, right, or full to indicate left outer join, right outer join, or full join.
+
+Example:
+    z = cogroup x by (day,origin) left, y by (day,airport);
+
+You can apply an outer cogrouping across more than 2 sets of data.
+This example does a left outer join from a to b, with a right join to c:
+
+    result = cogroup a by keya left, b by keyb right, c by keyc;
+
+================================================
+union - combines multiple result sets into one result set.
+        Syntax: result = union resultSetA, resultSetB [, resultSetC ...];
+
+================================================
+order ... by ... - Sorts by one or more attributes.
+Syntax
+    result = order rows by attribute [ asc | desc ];
+    result = order rows by (attribute [ asc | desc ], attribute [ asc | desc ]);
+
+asc or desc - ascending (asc) or descending (desc) order. 
+              The default order is ascending.
+
+You can order ungrouped data, data within group, 
+or to sort grouped data by an aggregated value.
+Example:
+    q = order q by 'count' desc;
+
+Example ordering stream by multiple attributes:
+    a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    b = group a by (year, month);
+    c = foreach b generate year as year, month as month;
+    d = order c by (year desc, month desc);
+
+You can’t reference a preprojection ID in a postprojection order operation.
+(Projection is another term for a foreach operation.)
+This code throws an error:
+    q = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    q = group q by 'FirstName';
+    q = foreach q generate 'FirstName' as 'User_FirstName', sum('mea_mm10M') as 'sum_mm10M';
+ -- q = order q by 'FirstName' desc;        -- ERROR
+    q = order q by 'User_FirstName' desc;   -- CORRECT
+
+================================================
+limit - limits the number of results:
+    b = limit a 10
+
+offset - skip given number of rows
+    a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    b = foreach a generate 'carrier' as 'carrier', count() as 'count';
+    c = order b by 'count' desc;
+    d = limit c 400;
+    e = offset d 400; -- returns rows 400 to 800
+
+================================================
+Aggregate functions: avg(0 or average(), count(), first(), 
+                     last(), max(), min(), sum(), unique()
+Example:
+    a = load "0Fbxx000000002qCAA/0Fcxx000000002WCAQ";
+    a = filter a by dest in ["ORD", "LAX", "ATL", "DFW", "PHX", "DEN", "LGA"];
+    a = group a by carrier;
+    b = foreach a generate carrier as airline, sum(miles) as miles;
+
+================================================
+coalesce(v1,v2,v3, ...) - get the first non-null value from a list of parameters.
+
+Example:
+    accounts = load "em/cogroup/accounts";
+    opps = load "em/cogroup/opportunities";
+    c = cogroup accounts by 'Year' full, opps by 'Year';
+    c = foreach c generate coalesce(accounts::'Year',opps::'Year') as 'group';
+
+You can also use the coalesce() function to replace nulls with a default value.
+For example, the following statements set the default 
+for division by zero to a non-null value.
+
+    q = load "dataset";
+    q = group q by 'Year';
+    q = foreach q generate 'Year', coalesce(sum(Amount)/sum(Quantity),0);
+
+================================================
+================================================
+
+

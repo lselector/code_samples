@@ -1,0 +1,76 @@
+Folks,
+
+Today's perl tip is about context.
+In perl the same expression may work differently depending on the "context".
+For example, an array in list context will return the whole array, 
+but in scalar context will return the scalar value - the number of elements in the array.
+When you writing your own function and want it to return different things depending on the context in which it is called - you can use built-in function  wantarray
+http://perldoc.perl.org/functions/wantarray.html
+
+Here are some examples of handling context
+
+[ ] - anonymous array constructor is an operator - creates a list context 
+
+sub arrayish { print "arrayish\n" if wantarray } 
+$a = arrayish();   #nope 
+$a = (arrayish()); #nope 
+$a = [ arrayish() ]; # arrayish 
+($a) = arrayish();   # arrayish 
+
+--------------------------------------------------------------------------------
+you can use [..] or (..)[..] to force list context 
+
+$wordlist_ref = [  split /\+/, $str ]  # correct 
+$wordlist_ref = \( split /\+/, $str )  # WRONG - creates a scalar ref to last fragment from split. 
+
+--------------------------------------------------------------------------------
+parentheses don't create list context 
+
+#!/usr/bin/perl
+use strict ;
+use warnings;
+package golf; 
+my $aa = 1;
+$aa = (1..10);        # $aa is now undefined; 
+print "-- $aa --\n";  # --  --
+
+--------------------------------------------------------------------------------
+[ ] creates a reference to anonymous array: 
+
+my $aref = [1..3]; 
+print ref $aref, " @$aref\n";  # ARRAY 1 2 3 
+
+--------------------------------------------------------------------------------
+Interpolating expressions in "" strings (or here doc strings) with @{[..]}: 
+
+package golf; 
+sub new { bless {} }; 
+sub name { 'Tiger' }; 
+
+package main; 
+my $gg = new golf; 
+my $name = $gg->name; 
+print "$name -- $gg->name\n";       # WRONG:   Tiger -- golf=HASH(0xabc50)->name 
+print "$name -- @{[$gg->name]}\n";  # correct: Tiger -- Tiger 
+
+--------------------------------------------------------------------------------
+Make a copy of a list with [ ]: 
+
+@a_copy = @a;  # explicit named copy 
+@{[@a]}        # unnamed copy 
+eval {@a}      # unnamed copy 
+
+--------------------------------------------------------------------------------
+use reference to an array as a subscript: 
+
+#!/usr/bin/perl
+use strict ;
+use warnings;
+sub SepPrint::TIEHASH { my $class = shift; bless {sep =>shift}, $class     }
+sub SepPrint::FETCH   { my $self  = shift; join  $self->{sep},  @{shift()} }
+my (%comma, %colon);
+tie %comma, 'SepPrint', ", ";
+tie %colon, 'SepPrint', ":";
+print "testing $comma{[1, 2, 3]}\n";  # testing 1, 2, 3 
+print "testing $colon{[1, 2, 3]}\n";  # testing 1:2:3
+

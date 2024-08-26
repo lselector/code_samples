@@ -1,0 +1,127 @@
+# ---------------------------------------------------------------
+FAST_IO.txt
+Notes on how to do fast file IO using Python/Pandas.
+This file contains just ideas how to do things.
+For timing comparisons see this script:
+
+  test_file_speed.py
+
+Mostly we deal with CSV or TSV files (Comma or Tab Separated Values).
+For big files we usually have them compressed like 
+    .gz       - single file
+    .tar.gz   - may contain many files 
+    .zip      - may contain many files
+    .h5       - HDF5 file
+
+# ---------------------------------------------------------------
+# read a delimited file into DF:
+# ---------------------------------------------------------------
+    DF = pd.read_csv(fname, sep='|')
+    DF = pd.read_csv(fname, sep='|', compression='gzip’)
+    DF = pd.read_csv(fname, sep='|', compression='bz2’ )
+
+# ---------------------------------------------------------------
+# extract tsv file from a zip file (which may have other files)
+# ---------------------------------------------------------------
+    import zipfile
+    zz = zipfile.ZipFile('test.zip', 'r')
+    fh = zz.open('test.tsv')
+    DF = pd.read_csv(fh, sep='|')
+
+or
+    unzip ...
+    DF = pd.read_csv(fname, sep='|')
+
+# ---------------------------------------------------------------
+# extract tsv file from a tar.gz file (which may have other files)
+# ---------------------------------------------------------------
+    import tarfile
+    tar = tarfile.open(mode="r:gz", fileobj=file(‘test.tar.gz'))
+    fh = tar.extractfile(fname_inside)
+    DF = pd.read_csv(fh, sep='|')
+
+or
+    tar zxvf ...
+    DF = pd.read_csv(fname, sep='|')
+
+# ---------------------------------------------------------------
+# write a DF to a delimited file, uncompressed
+# ---------------------------------------------------------------
+    DF.to_csv(fname, sep='\t', index=False, encoding='utf-8')
+    DF.to_csv(fname, sep=‘|' , index=False)
+
+# ---------------------------------------------------------------
+# write a DF to a CSV string
+# ---------------------------------------------------------------
+    csv_content = DF.to_csv(None, sep='|', index=False, header=myheader)
+
+# ---------------------------------------------------------------
+# write a DF to a delimited file, compressed
+# ---------------------------------------------------------------
+
+    df.to_csv(fname_in, sep='|', index=False, header=True)
+    run_cmd(bag, "gzip -4 --force " + fname_out) # can do similar thing for zip
+or
+    fh = gzip.open(fname_tmp, 'wb', 4)
+    for  … 10K rows of the DF at a time:
+        mystring = DF.to_csv(None, …)
+        fh.write(the string).
+or
+    ss = bag.df.to_csv(None, sep='|', index=False, header=True)
+    zz = zipfile.ZipFile(zipfilename, 'w')
+    zz.writestr(zinfo_or_arcname=fname_in_zip, bytes=ss, compress_type=None)
+
+# ---------------------------------------------------------------
+# write strings to big gz file:
+# ---------------------------------------------------------------
+
+    fh = gzip.open(fname, 'wb', comprlevel)
+    # prepare chunks of ~10K lines each
+    for ss in chunks:
+        fh.write(ss)
+    fh.close()
+
+# ---------------------------------------------------------------
+# reading strings from big gz, tar.gz, or zip files:
+# ---------------------------------------------------------------
+
+    fh = gzip.open(fname, 'rb')
+    for line in fh:
+         # process the line
+    fh.close()
+
+    # -------------
+
+    import tarfile
+    tar = tarfile.open(mode="r:gz", fileobj=file(‘test.tar.gz'))
+    fh = tar.extractfile(fname_inside)
+    for line in fh:
+        ...
+
+    # -------------
+
+    import zipfile
+    zz = zipfile.ZipFile('test.zip', 'r')
+    fh = zz.open('test.tsv')
+    for line in fh:
+        ...
+
+    # -------------
+
+    extract file using unix command
+    then read text file 
+    (line by line or using buffer - needs more testing)
+
+    # -------------
+
+# ---------------------------------------------------------------
+# working with HDF5 files
+# ---------------------------------------------------------------
+
+    store = pd.HDFStore(fname, complevel=8, complib='blosc')
+    store['my_df'] = DF
+    store.close()
+
+    store = pd.HDFStore(fname)
+    DF = store['my_df']
+    store.close()

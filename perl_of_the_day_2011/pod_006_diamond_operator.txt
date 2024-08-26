@@ -1,0 +1,9 @@
+Today's perl of the day is very short.
+If you want the script to pause and wait for you to press <Enter>, just add this to your code:
+
+<>;
+
+This is equivalent to 
+
+<STDIN>;
+

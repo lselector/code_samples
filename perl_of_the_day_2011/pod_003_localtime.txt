@@ -1,0 +1,45 @@
+Today I write about localtime() function.
+  http://perldoc.perl.org/functions/localtime.html
+It takes time in seconds since 1970 (epoch time) - and converts it in an array of values for your local time settings.
+Or, in scalar context, it returns a string with today's date and time - kind of like unix date command.
+
+Similar function is gmtime()
+   http://perldoc.perl.org/functions/gmtime.html
+
+Note - to receive number of epoch seconds, use time() command:
+   http://perldoc.perl.org/functions/time.html
+
+Here are couple simple example of using localtime:
+
+# --------------------------------------------------------------
+# datetime4fname() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a file name YYMMDD_HHMMSS, ex. 050512_150645
+# --------------------------------------------------------------
+sub datetime4fname {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) = localtime($mytime);
+  return sprintf("%02d%02d%02d_%02d%02d%02d",$year-100,$mon+1,$mday, $hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime4log() - accepts (optionally) time in seconds since 1970
+#   returns datetime stamp for a log string, ex. 05/09/15_15:06:45
+# --------------------------------------------------------------
+sub datetime4log {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) = localtime($mytime);
+  return sprintf("%02d/%02d/%02d_%02d:%02d:%02d",$mon+1,$mday,$year-100, $hour, $min, $sec);
+}
+
+# --------------------------------------------------------------
+# datetime_wday4text() - accepts (optionally) time in seconds since 1970
+#   returns date, day_of_week, and time in easy-readable format: 12/31/05 - Mon - 23:59
+# --------------------------------------------------------------
+sub datetime_wday4text {
+       my $mytime = shift || time();
+  my ($sec, $min, $hour, $mday, $mon, $year, $wday, $ydat, $isdst) = localtime($mytime);
+       my @wday = qw(Sun Mon Tue Wed Thu Fri Sat);
+       my $wd = $wday[$wday];
+  return sprintf("%02d/%02d/%02d - %s - %02dh:%02dm",$mon+1,$mday,$year-100,$wd, $hour,$min);
+}
+

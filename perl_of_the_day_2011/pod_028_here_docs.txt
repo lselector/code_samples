@@ -1,0 +1,55 @@
+Hello,
+
+Here-docs is a way to specify a multi-string text, for example:
+
+my $str = <<EOT;
+some text1
+some text2
+EOT
+
+print $str,$/;
+ 
+the EOT can be any word.
+
+Important that at the end of the here-doc this word is at the very beginning of the line, and it is the only thing on the line.
+
+Perl supports here-docs similar to how shells support them.
+See here:  http://en.wikipedia.org/wiki/Here_document
+
+By default the content of the text is treated as it is in double-quotes.
+You can explicitly specify what kind of quotes you want to use by specifying them around the word like this:
+
+my $city = 'New York';
+
+my $str1 = <<'END';
+city = $city
+END
+
+print $str1,$/;   # prints city = $city
+
+my $str2 = <<"END";
+city = $city
+END
+print $str2,$/;   # prints city = New York
+
+You can start more than one here-doc on one line, for example:
+
+$m='mama';
+$p='papa';
+print "---------------------\n";
+
+&mumu(<<'EOT1' ,  <<"EOT2");
+$m
+$p
+EOT1
+$m
+$p
+EOT2
+print "---------------------\n";
+
+sub mumu {
+ my $s1 = shift;
+ my $s2 = shift;
+ print "$s1$s2\n";
+}
+

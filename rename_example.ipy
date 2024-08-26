@@ -1,0 +1,24 @@
+
+import os, sys, subprocess, re
+
+mydir = 'somedir'
+if not os.path.isdir(mydir):
+    print("ERROR, Exiting because directory doesn't exist: ", mydir)
+    0/0 # use syntax error to exit iPython script
+
+%cd {mydir}
+mylist = !(ls *.mp4 *.mkv)
+# printr( mylist)`
+
+nn = 1
+for fname1 in mylist:
+    print(fname1)
+#    fname2 = fname1.replace('_29-11-2016','')
+    fname2 = 'ep'+fname1
+    if fname1 != fname2:
+        cmd = "mv -f '%s' '%s'" % (fname1,fname2)
+        print(cmd)
+        subprocess.call(cmd, shell=True)
+
+%cd "~/bin"
+

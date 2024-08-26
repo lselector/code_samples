@@ -1,0 +1,38 @@
+Hello,
+
+splice() - a function to add/remove elements anywhere in an array 
+
+splice ARRAY,OFFSET,LENGTH 
+splice ARRAY,OFFSET 
+splice ARRAY,OFFSET,LENGTH,LIST 
+
+Removes the elements designated by OFFSET and LENGTH from an array,
+  and replaces them with the elements of LIST, if any.
+If LENGTH is omitted, removes everything from OFFSET onward.
+
+In list context, returns the elements removed from the array.
+In scalar context, returns the last element removed, or undef if no elements are removed.
+The array grows or shrinks as necessary.
+If OFFSET is negative then it start that far from the end of the array.
+If LENGTH is negative, leave that many elements off the end of the array. 
+
+Simple example - sequentially taking up to 3 elements from the array:
+
+my @ar = qw( aa bb cc dd ee ff gg hh kk ll mm );
+print "@ar\n";
+
+my $pos=0;
+my $len=3;
+my @pp=();
+my @tmp = @ar; # make a copy, because splice destroys the original
+while (@pp = splice(@tmp,$pos,$len)) {
+  print "@pp\n";
+}
+
+Output:
+aa bb cc dd ee ff gg hh kk ll mm
+aa bb cc
+dd ee ff
+gg hh kk
+ll mm
+

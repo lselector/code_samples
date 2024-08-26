@@ -1,0 +1,94 @@
+# --------------------------------------------------------------
+# python3 script to clean text files for text-to-audio conversion
+# --------------------------------------------------------------
+
+import sys, os, re, glob, string
+
+dir_in = os.environ['HOME'] + '/Downloads/'
+
+if not os.path.isdir(dir_in):
+    print("ERROR, Exiting because directory doesn't exist: ", dir_in)
+    0/0 # use syntax error to exit iPython script
+
+dir_out = dir_in
+
+# --------------------------------------------------------------
+%cd {dir_in}
+mylist = glob.glob('*txt')
+print(mylist)
+mylist = sorted(mylist, key=lambda s: s.lower())
+# --------------------------------------------------------------
+counter = 1
+
+for fname1 in mylist:
+    if fname1[:2] == 'c_':
+        continue
+    print("reading file", fname1)
+    with open(fname1, 'r', encoding="latin-1") as fh: 
+        text = fh.read()
+    text = re.sub(r'\r'  ,'\n', text)
+    text = re.sub(r'\xd4',"'", text)
+    text = re.sub(r'\xd5',"'", text)
+    text = re.sub(r'\xe2',"'", text)
+    text = re.sub(r'\x0c',"", text)
+    text = re.sub(r'\xd0',' ', text)
+    text = re.sub(r'\xd2','"', text)
+    text = re.sub(r'\xd3','"', text)
+    text = re.sub(r'\x89\xdb\xaa',"'", text)
+    text = re.sub(r'\x89\xdb',"'", text)
+
+    text = re.sub(r'\xc2\xa9','\n', text)
+    text = re.sub(r'\xa9','\n', text)
+    text = re.sub(r'\xa5',' - ', text)
+    text = re.sub(r'\xc8',' - ', text)
+    text = re.sub(r'\xc9',' - ', text)
+
+    text = re.sub(r'[\x80-\xFF]','', text)
+
+    text = re.sub(r'\. +\.+',' . ', text)
+    text = re.sub(r'  +',' ', text)
+    text = re.sub(r' +\n','\n', text)
+
+    text = re.sub(r'\n+',' .\n', text)
+    text = re.sub(r'\b(\w+)\b',   r' \1 ',        text, flags=re.I) # spaces around words
+    text = re.sub(r'\bcarb\b',   ' carbb ',       text, flags=re.I)
+    text = re.sub(r'\bcarbs\b',  ' carbss ',      text, flags=re.I)
+    text = re.sub(r'\brep\b',    ' repp ',        text, flags=re.I)
+    text = re.sub(r'\breps\b',   ' repss ',       text, flags=re.I)
+    text = re.sub(r'\bkcal\b',   ' kilocalories ', text, flags=re.I)
+    text = re.sub(r'\bleptin\b',   ' leptin ', text, flags=re.I)
+    text = re.sub(r'  +',' ', text)
+    text = re.sub(r'\bnext post\b', '',          text)
+    text = re.sub(r' \' (t|s|ve|re|ll|d|m|em)\b', r"'\1", text, flags=re.I) 
+    # " keep this comment to preserve highlighting in UltraEdit
+    text = re.sub(r'\. +\.+',' . ', text)
+    text = re.sub(r'(\d) \. (\d)', r'\1.\2', text)
+
+##    text1 = text + ' '   # save a copy
+##    chars1 = set(list(text1)) # set of characters
+
+    # remove all non-printable characters
+    printable = set(string.printable) # ASCII printable chars only
+    text = ''.join(filter(lambda x: x in printable, text))
+
+    text = re.sub(r'\-+', r'-', text)
+    text = re.sub(r'\[+', r' , ', text)
+    text = re.sub(r'\]+', r' , ', text)
+    text = re.sub(r'\;+', r' , ', text)
+    text = re.sub(r'\  +', r' ', text)
+
+##    chars2 = set(list(text)) # set of characters
+##    mydiff = chars1-chars2
+##    for ch in list(mydiff):
+##        print("%x"%ord(ch))
+##    print("----------------------")
+
+    fname2 = "%s/c%02d_%s" % (dir_out, counter, fname1)
+    counter += 1
+    print("writing file", fname2)
+    with open(fname2,'w') as fh: fh.write(text)
+
+    # ----- end of for loop here
+
+%cd "~/bin"
+
