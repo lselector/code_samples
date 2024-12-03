@@ -1,7 +1,28 @@
-How to do timeouts in Python
 
-# https://github.com/bitranox/wrapt_timeout_decorator
+"""
+# How to do timeouts in Python
+# using wrapt_timeout: https://github.com/bitranox/wrapt_timeout_decorator
+# code below is extracted from a script querying Salesforce
+# is is somewhat cleaned - but still uses some custom objects and functions
+# which need to be substituted by something else.
+# 
+# bag - a dictionary where you can use dot notation (bag.key instead of bag['key'])
+#     https://github.com/lselector/setup_computer/blob/master/py_lib/mybag.py
+# bag.soql - a string with the query
+# bag.sf.query_all() - a function to run the query and return a result
+# commify - function to format a number by separating thousands with commas
+# conv_res_to_df() - function to convert result set into pandas dataframe
+# test_avail() - function to test if a particular key exists in a bag dictionary
+# run_query() - function to run one query in a forked subprocess created by timeout
+# now_str() - function returning current date-time
+# run_sql(bag, bag2) - wrapper to run a query. 
+#    It uses two global variables (dictionaries) - bag and bag2 
+#    bag is used to pass parameters
+#    bag2.df is used to accumulate (concat) data of sequential calls to run_sql()
+"""
 
+import os, sys, time
+import ...
 from wrapt_timeout_decorator import *
 
 # ---------------------------------------------------------------
@@ -66,7 +87,7 @@ def run_sql(bag, bag2):
     df = conv_res_to_df(result)
     if test_avail(bag2, "df"):
         print("appending %s rows into bag2.df" % (commify(len(df))))
-        bag2.df = bag2.df.append(df, ignore_index=True)
+        bag2.df = pd.concat([bag2.df,df], ignore_index=True)
     else:
         print("starting %s rows into bag2.df" % (commify(len(df))))
         bag2.df = df.copy()
